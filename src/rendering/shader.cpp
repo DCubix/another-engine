@@ -1,11 +1,13 @@
 #include "shader.h"
 
 #include "log.h"
+#include <sstream>
+
+#include "file_system.h"
 
 namespace ae {
-	Shader& Shader::create() {
+	void Shader::create() {
 		m_program = glCreateProgram();
-		return *this;
 	}
 
 	void Shader::free() {
@@ -16,7 +18,7 @@ namespace ae {
 		if (m_program) glDeleteProgram(m_program);
 	}
 
-	Shader& Shader::addShader(const std::string& source, ShaderType type) {
+	void Shader::addShader(const std::string& source, ShaderType type) {
 		uint32 shader = glCreateShader(type);
 
 		const char* src = source.c_str();
@@ -30,16 +32,13 @@ namespace ae {
 			glGetShaderInfoLog(shader, 1024, nullptr, err);
 			Log.error(std::string(err));
 			glDeleteShader(shader);
-			return *this;
 		}
 		
 		m_shaders[shader] = source;
 		glAttachShader(m_program, shader);
-
-		return *this;
 	}
 
-	Shader& Shader::link() {
+	void Shader::link() {
 		glLinkProgram(m_program);
 		int32 status;
 		glGetProgramiv(m_program, GL_LINK_STATUS, &status);
@@ -48,9 +47,7 @@ namespace ae {
 			glGetProgramInfoLog(m_program, 1024, nullptr, err);
 			Log.error(std::string(err));
 			free();
-			return *this;
 		}
-		return *this;
 	}
 
 	void Shader::bind() {
@@ -98,5 +95,95 @@ namespace ae {
 	void intern::Uniform::operator =(const Vector3& v) { glUniform3f(loc, v.x, v.y, v.z); }
 	void intern::Uniform::operator =(const Vector4& v) { glUniform4f(loc, v.x, v.y, v.z, v.w); }
 	void intern::Uniform::operator =(Matrix4 v) { glUniformMatrix4fv(loc, 1, true, v.data()); }
+
+	ShaderFactory::ShaderFactory(const std::string& fileName) {
+		this->fileName(fileName);
+	}
+
+	ResourcePtr ShaderFactory::load() {
+		if (!m_ptr) {
+			m_ptr = std::make_shared<Shader>();
+			auto file = FileSystem::ston().open(fileName());
+			auto sz = file.size();
+			std::vector<char> data;
+			data.resize(sz);
+
+			if (file.read(data.data(), sz) == sz) {
+				std::stringstream ss, outVS, outFS, outGS, outCS;
+				ss << data.data();
+
+				std::string line;
+				while (std::getline(ss, line)) {
+					bool discard = false;
+					ShaderType type = ShaderType::VertexShader;
+
+					if (line[0] == '#') {
+						std::stringstream lineStream(line);
+						std::string preprocessor; lineStream >> preprocessor;
+
+						if (preprocessor == "#blendmode") {
+							std::string mode; lineStream >> mode;
+							BlendMode blend = BlendMode::Opaque;
+
+							if (mode == "ADD") blend = BlendMode::Add;
+							else if (mode == "ALPHA") blend = BlendMode::Alpha;
+
+							m_ptr->blendMode(blend);
+
+							discard = true;
+						} else if (preprocessor == "#depthtest") {
+							std::string mode; lineStream >> mode;
+							DepthTest depth = DepthTest::Less;
+
+							if (mode == "ALWAYS") depth = DepthTest::Always;
+							else if (mode == "EQUAL") depth = DepthTest::Equal;
+							else if (mode == "GREATER") depth = DepthTest::Greater;
+							else if (mode == "GREATER_EQUAL") depth = DepthTest::GreaterEqual;
+							else if (mode == "LESS") depth = DepthTest::Less;
+							else if (mode == "LESS_EQUAL") depth = DepthTest::LessEqual;
+							else if (mode == "NEVER") depth = DepthTest::Never;
+
+							m_ptr->depthTest(depth);
+
+							discard = true;
+						} else if (preprocessor == "#depthwrite") {
+							std::string mode; lineStream >> mode;
+
+							m_ptr->depthWrite(true);
+							if (mode == "FALSE" || mode == "false" || mode == "0") m_ptr->depthWrite(false);
+
+							discard = true;
+						}
+					} else if (line == "[VERTEX_SHADER]") {
+						type = ShaderType::VertexShader;
+						discard = true;
+					} else if (line == "[FRAGMENT_SHADER]") {
+						type = ShaderType::FragmentShader;
+						discard = true;
+					} else if (line == "[GEOMETRY_SHADER]") {
+						type = ShaderType::GeometryShader;
+						discard = true;
+					} else if (line == "[COMPUTE_SHADER]") {
+						type = ShaderType::ComputeShader;
+						discard = true;
+					}
+
+					if (!discard) {
+						switch (type) {
+							case VertexShader: outVS << line << "\n"; break;
+							case FragmentShader: outFS << line << "\n"; break;
+							case GeometryShader: outGS << line << "\n"; break;
+							case ComputeShader: outCS << line << "\n"; break;
+						}
+					}
+				}
+
+
+			}
+
+			file.close();
+		}
+		return m_ptr;
+	}
 
 }

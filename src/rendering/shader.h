@@ -8,6 +8,7 @@
 #include "integer.hpp"
 #include "glad.h"
 #include "vec_math.hpp"
+#include "resource_manager.h"
 
 namespace ae {
 	enum ShaderType {
@@ -45,16 +46,16 @@ namespace ae {
 		};
 	}
 
-	class Shader {
+	class Shader : public ResourceBase {
 	public:
 		Shader() = default;
 		~Shader() = default;
 
-		Shader& create();
+		void create();
 		void free();
 
-		Shader& addShader(const std::string& source, ShaderType type);
-		Shader& link();
+		void addShader(const std::string& source, ShaderType type);
+		void link();
 
 		void bind();
 		void unbind();
@@ -84,6 +85,15 @@ namespace ae {
 
 		intern::Uniform m_uniformHandler;
 	};
+
+	class ShaderFactory : public ResourceFactory {
+	public:
+		explicit ShaderFactory(const std::string& fileName);
+		virtual ResourcePtr load() override;
+	private:
+		std::shared_ptr<Shader> m_ptr;
+	};
+
 }
 
 #endif // SHADER_H

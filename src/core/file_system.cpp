@@ -3,7 +3,7 @@
 #include "log.h"
 
 namespace ae {
-	FileSystem FileSystem::s_instance;
+	FileSystem FileSystem::s_instance{};
 
 	void FileSystem::init(const char* argv0) {
 		if (!PHYSFS_isInit()) {

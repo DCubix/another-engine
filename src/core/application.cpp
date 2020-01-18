@@ -105,6 +105,9 @@ namespace ae {
 		glDebugMessageCallbackARB((GLDEBUGPROCARB) GLDebug, NULL);
 #endif
 
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_FRAMEBUFFER_SRGB);
+
 		mainLoop();
 	}
 
