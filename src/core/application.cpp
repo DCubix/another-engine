@@ -48,7 +48,7 @@ namespace ae {
 			return;
 		}
 
-		m_application->on_setup(*this);
+		m_application->onSetup(*this);
 
 		Log.assert(
 			!(m_settings.window.fullScreen && m_settings.window.resizable),
@@ -105,19 +105,19 @@ namespace ae {
 		glDebugMessageCallbackARB((GLDEBUGPROCARB) GLDebug, NULL);
 #endif
 
-		main_loop();
+		mainLoop();
 	}
 
-	void Application::set_title(const std::string& title) {
+	void Application::setTitle(const std::string& title) {
 		m_settings.window.title = title;
 		SDL_SetWindowTitle(m_window, title.c_str());
 	}
 
-	double Application::current_time() const {
+	double Application::currentTime() const {
 		return double(SDL_GetTicks()) / 1000.0;
 	}
 
-	void Application::swap_buffers() const {
+	void Application::swapBuffers() const {
 		SDL_GL_SwapWindow(m_window);
 	}
 
@@ -126,11 +126,11 @@ namespace ae {
 		glClear(bits);
 	}
 
-	void Application::main_loop() {
-		m_application->on_create(*this);
+	void Application::mainLoop() {
+		m_application->onCreate(*this);
 
 		const double timeStep = 1.0 / double(m_settings.engine.frameCap);
-		double startTime = current_time();
+		double startTime = currentTime();
 		double initialTime = startTime;
 		double accum = 0.0;
 
@@ -139,9 +139,9 @@ namespace ae {
 		m_running = true;
 		while (m_running) {
 			bool canRender = false;
-			double currentTime = current_time();
-			double delta = currentTime - startTime;
-			startTime = currentTime;
+			double current = currentTime();
+			double delta = current - startTime;
+			startTime = current;
 			accum += delta;
 
 			// TODO: Move this into an input manager
@@ -154,23 +154,23 @@ namespace ae {
 
 			while (accum >= timeStep) {
 				accum -= timeStep;
-				m_application->on_update(*this, float(timeStep));
+				m_application->onUpdate(*this, float(timeStep));
 				canRender = true;
 			}
 
 			if (canRender) {
 				m_frames++;
-				if (current_time() - initialTime >= 1.0) {
+				if (currentTime() - initialTime >= 1.0) {
 					m_msFrame = 1000.0 / double(m_frames);
 					m_frames = 0;
 					initialTime += 1.0;
 				}
-				m_application->on_render(*this);
+				m_application->onRender(*this);
 			}
 
 			if (m_shouldClose) m_running = false;
 		}
-		m_application->on_destroy();
+		m_application->onDestroy();
 
 		SDL_GL_DeleteContext(m_context);
 		SDL_DestroyWindow(m_window);

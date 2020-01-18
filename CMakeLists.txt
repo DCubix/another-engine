@@ -17,9 +17,10 @@ add_definitions(-DSDL_MAIN_HANDLED)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/extern/glad)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/core)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/rendering)
 
 add_executable(${PROJECT_NAME} ${SRC})
-target_link_libraries(${PROJECT_NAME} PRIVATE glad core)
+target_link_libraries(${PROJECT_NAME} PRIVATE glad core rendering)
 
 if(CMAKE_DL_LIBS)
 	target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_DL_LIBS})

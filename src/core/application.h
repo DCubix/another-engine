@@ -12,11 +12,11 @@ namespace ae {
 	class Application;
 	class ApplicationAdapter {
 	public:
-		virtual void on_setup(Application& app) {}
-		virtual void on_create(Application& app) {}
-		virtual void on_update(Application& app, float dt) {}
-		virtual void on_render(Application& app) {}
-		virtual void on_destroy() {};
+		virtual void onSetup(Application& app) {}
+		virtual void onCreate(Application& app) {}
+		virtual void onUpdate(Application& app, float dt) {}
+		virtual void onRender(Application& app) {}
+		virtual void onDestroy() {};
 	};
 
 	struct ApplicationSettings {
@@ -42,18 +42,18 @@ namespace ae {
 
 		ApplicationSettings& settings() { return m_settings; }
 
-		void set_title(const std::string& title);
+		void setTitle(const std::string& title);
 
 		void run();
-		double current_time() const;
+		double currentTime() const;
 
-		void swap_buffers() const;
+		void swapBuffers() const;
 		void clear(GLenum bits = GL_COLOR_BUFFER_BIT, float r = 0.0f, float g = 0.25f, float b = 0.5f, float a = 1.0f);
 
 		void exit() { m_shouldClose = true; }
 		void restart() { exit(); m_shouldRestart = true; }
 
-		double millis_per_frame() const { return m_msFrame; }
+		double millisPerFrame() const { return m_msFrame; }
 
 	private:
 		std::unique_ptr<ApplicationAdapter> m_application;
@@ -67,7 +67,7 @@ namespace ae {
 		SDL_Window* m_window;
 		SDL_GLContext m_context;
 
-		void main_loop();
+		void mainLoop();
 	};
 }
 
