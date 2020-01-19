@@ -17,7 +17,7 @@ namespace ae {
 		FileSystem() = default;
 		~FileSystem();
 
-		void init(const char* argv0 = NULL);
+		void init(const char* argv0 = nullptr);
 
 		void mount(const std::string& path, const std::string& mountPoint = "");
 		void umount(const std::string& path);
@@ -28,10 +28,10 @@ namespace ae {
 		std::string where(const std::string& file);
 
 		bool exists(const std::string& path);
-		bool is_dir(const std::string& path);
+		bool isDir(const std::string& path);
 
-		std::string app_dir() const;
-		void set_write_dir(const std::string& path);
+		std::string appDir();
+		void setWriteDir(const std::string& path);
 
 		struct File {
 			enum {

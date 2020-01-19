@@ -8,6 +8,7 @@ namespace ae {
 	void FileSystem::init(const char* argv0) {
 		if (!PHYSFS_isInit()) {
 			PHYSFS_init(argv0);
+			mount(appDir());
 		}
 	}
 
@@ -18,6 +19,7 @@ namespace ae {
 	}
 
 	void FileSystem::mount(const std::string& path, const std::string& mountPoint) {
+		init(nullptr);
 		Log.assert(!path.empty(), "Please specify a path.");
 		if (!PHYSFS_mount(path.c_str(), mountPoint.c_str(), 1)) {
 			Log.error("File System Error: " + std::string(PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())));
@@ -25,6 +27,7 @@ namespace ae {
 	}
 
 	void FileSystem::umount(const std::string& path) {
+		init(nullptr);
 		Log.assert(!path.empty(), "Please specify a path.");
 		if (!PHYSFS_unmount(path.c_str())) {
 			Log.error("File System Error: " + std::string(PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())));
@@ -32,6 +35,7 @@ namespace ae {
 	}
 
 	void FileSystem::mkdir(const std::string& path) {
+		init(nullptr);
 		Log.assert(!path.empty(), "Please specify a path.");
 		if (!PHYSFS_mkdir(path.c_str())) {
 			Log.error("File System Error: " + std::string(PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())));
@@ -39,6 +43,7 @@ namespace ae {
 	}
 
 	void FileSystem::rm(const std::string& path) {
+		init(nullptr);
 		Log.assert(!path.empty(), "Please specify a path.");
 		if (!PHYSFS_delete(path.c_str())) {
 			Log.error("File System Error: " + std::string(PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())));
@@ -46,6 +51,7 @@ namespace ae {
 	}
 
 	std::vector<std::string> FileSystem::ls(const std::string& path) {
+		init(nullptr);
 		Log.assert(!path.empty(), "Please specify a path.");
 
 		std::vector<std::string> files;
@@ -56,15 +62,18 @@ namespace ae {
 	}
 
 	std::string FileSystem::where(const std::string& file) {
+		init(nullptr);
 		Log.assert(!file.empty(), "Please specify a path.");
 		return std::string(PHYSFS_getRealDir(file.c_str()));
 	}
 
-	std::string FileSystem::app_dir() const {
+	std::string FileSystem::appDir() {
+		init(nullptr);
 		return std::string(PHYSFS_getBaseDir());
 	}
 
-	void FileSystem::set_write_dir(const std::string& path) {
+	void FileSystem::setWriteDir(const std::string& path) {
+		init(nullptr);
 		Log.assert(!path.empty(), "Please specify a path.");
 		if (!PHYSFS_setWriteDir(path.c_str())) {
 			Log.error("File System Error: " + std::string(PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())));
@@ -72,11 +81,13 @@ namespace ae {
 	}
 
 	bool FileSystem::exists(const std::string& path) {
+		init(nullptr);
 		Log.assert(!path.empty(), "Please specify a path.");
 		return PHYSFS_exists(path.c_str()) != 0;
 	}
 
-	bool FileSystem::is_dir(const std::string& path) {
+	bool FileSystem::isDir(const std::string& path) {
+		init(nullptr);
 		Log.assert(!path.empty(), "Please specify a path.");
 		PHYSFS_Stat stat;
 		PHYSFS_stat(path.c_str(), &stat);
@@ -84,6 +95,7 @@ namespace ae {
 	}
 
 	FileSystem::File FileSystem::open(const std::string& path, FileMode mode) {
+		init(nullptr);
 		Log.assert(!path.empty(), "Please specify a path.");
 		return File(path.c_str(), mode);
 	}
@@ -102,7 +114,7 @@ namespace ae {
 		read_only = stats.readonly != 0;
 		file_name = std::string(path);
 
-		if (mode == FileMode::ModeWrite || mode == FileMode::ModeAppend && read_only) {
+		if ((mode == FileMode::ModeWrite || mode == FileMode::ModeAppend) && read_only) {
 			Log.error("File is read-only.");
 			fp = nullptr;
 			return;

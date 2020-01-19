@@ -15,6 +15,11 @@ file(GLOB SRC
 
 add_definitions(-DSDL_MAIN_HANDLED)
 
+if (NOT NDEBUG)
+	message(STATUS "Compiling with _GLIBCXX_DEBUG")
+	add_definitions(-D_GLIBCXX_DEBUG)
+endif()
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/extern/glad)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/core)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/rendering)

@@ -83,7 +83,6 @@ namespace ae {
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
 
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-		SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
 
 #ifndef NDEBUG
 		int32 contextFlags = 0;
@@ -106,7 +105,8 @@ namespace ae {
 #endif
 
 		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_FRAMEBUFFER_SRGB);
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
 
 		mainLoop();
 	}

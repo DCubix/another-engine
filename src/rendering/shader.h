@@ -36,20 +36,20 @@ namespace ae {
 
 	namespace intern {
 		struct Uniform {
-			void operator =(int v);
-			void operator =(float v);
-			void operator =(const Vector2& v);
-			void operator =(const Vector3& v);
-			void operator =(const Vector4& v);
-			void operator =(Matrix4 v);
+			void set(int v);
+			void set(float v);
+			void set(const Vector2& v);
+			void set(const Vector3& v);
+			void set(const Vector4& v);
+			void set(Matrix4 v);
 			uint32 loc;
 		};
 	}
 
 	class Shader : public ResourceBase {
 	public:
-		Shader() = default;
-		~Shader() = default;
+		Shader();
+		~Shader();
 
 		void create();
 		void free();
@@ -71,7 +71,7 @@ namespace ae {
 		bool depthWrite() const { return m_depthWrite; }
 		void depthWrite(bool v) { m_depthWrite = v; }
 
-		intern::Uniform& operator[](const std::string& name);
+		intern::Uniform& get(const std::string& name);
 
 	private:
 		uint32 m_program{ 0 };
@@ -86,12 +86,13 @@ namespace ae {
 		intern::Uniform m_uniformHandler;
 	};
 
+	using ShaderPtr = std::shared_ptr<Shader>;
 	class ShaderFactory : public ResourceFactory {
 	public:
 		explicit ShaderFactory(const std::string& fileName);
 		virtual ResourcePtr load() override;
 	private:
-		std::shared_ptr<Shader> m_ptr;
+		ShaderPtr m_ptr;
 	};
 
 }

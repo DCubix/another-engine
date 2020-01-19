@@ -48,7 +48,7 @@ namespace ae {
 		double currentTime() const;
 
 		void swapBuffers() const;
-		void clear(GLenum bits = GL_COLOR_BUFFER_BIT, float r = 0.0f, float g = 0.25f, float b = 0.5f, float a = 1.0f);
+		void clear(GLenum bits = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, float r = 0.0f, float g = 0.15f, float b = 0.25f, float a = 1.0f);
 
 		void exit() { m_shouldClose = true; }
 		void restart() { exit(); m_shouldRestart = true; }

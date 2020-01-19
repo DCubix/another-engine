@@ -43,6 +43,16 @@ namespace consts {
 	const float E = 2.71828182845f;
 }
 
+namespace mathutils {
+	inline float toRadians(float degs) {
+		return degs * consts::Pi / 180.0f;
+	}
+
+	inline float toDegrees(float rads) {
+		return rads / consts::Pi * 180.0f;
+	}
+}
+
 class Vector2 {
 public:
 	inline Vector2() : x(0.0f), y(0.0f) {}
@@ -367,11 +377,13 @@ public:
 
 	inline static Matrix4 perspective(float fov, float aspect, float near, float far) {
 		const float thf = std::tan(fov / 2.0f);
+		const float w = 1.0f / thf;
+		const float h = aspect / thf;
 		return Matrix4({
-			1.0f / (aspect * thf), 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f / thf, 0.0f, 0.0f,
-			0.0f, 0.0f, -((far + near) / (far - near)), -((2.0f * far * near) / (far - near)),
-			0.0f, 0.0f, 1.0f, 0.0f
+			w   , 0.0f, 0.0f, 0.0f,
+			0.0f, h   , 0.0f, 0.0f,
+			0.0f, 0.0f, far / (near - far), far * near / (near - far),
+			0.0f, 0.0f, -1.0f, 0.0f
 		});
 	}
 
@@ -599,8 +611,8 @@ public:
 	inline Quaternion(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
 	inline Quaternion(const Vector2& v, float z = 0.0f, float w = 1.0f) : x(v.x), y(v.y), z(z), w(w) {}
 	inline Quaternion(const Vector3& v, float w = 1.0f) : x(v.x), y(v.y), z(v.z), w(w) {}
-	inline Quaternion(const Vector4& v) : x(v.x), y(v.y), z(v.z), w(w) {}
-	inline Quaternion(const Quaternion& v) : x(v.x), y(v.y), z(v.z), w(w) {}
+	inline Quaternion(const Vector4& v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
+	inline Quaternion(const Quaternion& v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
 
 	inline static Quaternion axisAngle(const Vector3& axis, float angle) {
 		Quaternion q{};
@@ -713,6 +725,17 @@ public:
 inline std::ostream& operator<<(std::ostream& o, const Quaternion& v) {
 	return o << "Quaternion(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
 }
+
+class AABB {
+public:
+	Vector3 min{}, max{};
+
+	AABB() = default;
+	AABB(const Vector3& min, const Vector3& max)
+		: min(min), max(max) {}
+	
+	// TODO: Implement AABB things
+};
 
 }
 

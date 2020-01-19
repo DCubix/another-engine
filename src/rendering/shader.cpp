@@ -4,8 +4,17 @@
 #include <sstream>
 
 #include "file_system.h"
+#include "util.hpp"
 
 namespace ae {
+	Shader::Shader() {
+		create();
+	}
+
+	Shader::~Shader() {
+		free();
+	}
+
 	void Shader::create() {
 		m_program = glCreateProgram();
 	}
@@ -84,17 +93,17 @@ namespace ae {
 		return pos->second;
 	}
 
-	intern::Uniform& Shader::operator[](const std::string& name) {
+	intern::Uniform& Shader::get(const std::string& name) {
 		m_uniformHandler.loc = getUniformLocation(name);
 		return m_uniformHandler;
 	}
 
-	void intern::Uniform::operator =(int v) { glUniform1i(loc, v); }
-	void intern::Uniform::operator =(float v) { glUniform1f(loc, v); }
-	void intern::Uniform::operator =(const Vector2& v) { glUniform2f(loc, v.x, v.y); }
-	void intern::Uniform::operator =(const Vector3& v) { glUniform3f(loc, v.x, v.y, v.z); }
-	void intern::Uniform::operator =(const Vector4& v) { glUniform4f(loc, v.x, v.y, v.z, v.w); }
-	void intern::Uniform::operator =(Matrix4 v) { glUniformMatrix4fv(loc, 1, true, v.data()); }
+	void intern::Uniform::set(int v) { glUniform1i(loc, v); }
+	void intern::Uniform::set(float v) { glUniform1f(loc, v); }
+	void intern::Uniform::set(const Vector2& v) { glUniform2f(loc, v.x, v.y); }
+	void intern::Uniform::set(const Vector3& v) { glUniform3f(loc, v.x, v.y, v.z); }
+	void intern::Uniform::set(const Vector4& v) { glUniform4f(loc, v.x, v.y, v.z, v.w); }
+	void intern::Uniform::set(Matrix4 v) { glUniformMatrix4fv(loc, 1, true, v.data()); }
 
 	ShaderFactory::ShaderFactory(const std::string& fileName) {
 		this->fileName(fileName);
@@ -105,17 +114,18 @@ namespace ae {
 			m_ptr = std::make_shared<Shader>();
 			auto file = FileSystem::ston().open(fileName());
 			auto sz = file.size();
-			std::vector<char> data;
-			data.resize(sz);
+			std::string data(sz, '\0');
 
 			if (file.read(data.data(), sz) == sz) {
 				std::stringstream ss, outVS, outFS, outGS, outCS;
 				ss << data.data();
 
+				ShaderType type = ShaderType::VertexShader;
 				std::string line;
 				while (std::getline(ss, line)) {
 					bool discard = false;
-					ShaderType type = ShaderType::VertexShader;
+
+					line = util::rtrim(line);
 
 					if (line[0] == '#') {
 						std::stringstream lineStream(line);
@@ -156,15 +166,19 @@ namespace ae {
 						}
 					} else if (line == "[VERTEX_SHADER]") {
 						type = ShaderType::VertexShader;
+						outVS << "#line 1" << "\n";
 						discard = true;
 					} else if (line == "[FRAGMENT_SHADER]") {
 						type = ShaderType::FragmentShader;
+						outFS << "#line 1" << "\n";
 						discard = true;
 					} else if (line == "[GEOMETRY_SHADER]") {
 						type = ShaderType::GeometryShader;
+						outGS << "#line 1" << "\n";
 						discard = true;
 					} else if (line == "[COMPUTE_SHADER]") {
 						type = ShaderType::ComputeShader;
+						outCS << "#line 1" << "\n";
 						discard = true;
 					}
 
@@ -178,9 +192,17 @@ namespace ae {
 					}
 				}
 
-
+				const std::string vs = outVS.str(),
+							fs = outFS.str(),
+							gs = outGS.str(),
+							cs = outCS.str();
+				const std::string versionHeader = "#version 440 core\n";
+				if (!vs.empty()) m_ptr->addShader(versionHeader + vs, ShaderType::VertexShader);
+				if (!fs.empty()) m_ptr->addShader(versionHeader + fs, ShaderType::FragmentShader);
+				if (!gs.empty()) m_ptr->addShader(versionHeader + gs, ShaderType::GeometryShader);
+				if (!cs.empty()) m_ptr->addShader(versionHeader + cs, ShaderType::ComputeShader);
+				m_ptr->link();
 			}
-
 			file.close();
 		}
 		return m_ptr;

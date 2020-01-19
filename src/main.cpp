@@ -14,20 +14,46 @@ public:
 	}
 
 	virtual void onCreate(Application& app) override {
-		
+		ResourceManager::ston().subscribe("shader", ShaderFactory("shader.glsl"));
+		ResourceManager::ston().subscribe("model", MeshFactory("bunny.obj"));
+		shader = ResourceManager::ston().load<Shader>("shader");
+		model = ResourceManager::ston().load<Mesh>("model");
+
+		projView = Matrix4::perspective(
+			mathutils::toRadians(60.0f),
+			float(app.settings().window.width) / app.settings().window.height,
+			0.01f, 1000.0f
+		)  * Matrix4::translation(Vector3(0, 0, -6));
 	}
 
 	virtual void onUpdate(Application& app, float dt) override {
 		const double fps = (1000.0 / app.millisPerFrame());
 		app.setTitle(std::to_string(fps) + " fps");
+
+		angle += dt;
 	}
 
 	virtual void onRender(Application& app) override {
 		app.clear();
 
+		modelMat = Matrix4::rotationY(angle);
+
+		shader->bind();
+		shader->get("projView").set(projView);
+		shader->get("model").set(modelMat);
+
+		model->bind();
+		model->draw(Mesh::Triangles);
+
 		app.swapBuffers();
 	};
 
+	Matrix4 projView, modelMat;
+
+	ShaderPtr shader;
+	MeshPtr model;
+
+	float angle{ 0.0f };
 };
 
 int main(int argc, char** argv) {

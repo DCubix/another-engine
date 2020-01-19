@@ -9,7 +9,10 @@
 #include "log.h"
 
 namespace ae {
-	struct ResourceBase {};
+	class ResourceBase {
+	public:
+		virtual ~ResourceBase() = default;
+	};
 
 	using ResourcePtr = std::shared_ptr<ResourceBase>;
 	using FactoryFunctor = std::function<ResourcePtr()>;
@@ -40,8 +43,12 @@ namespace ae {
 
 			return std::shared_ptr<T>(ptr, rawPtr);
 		}
+
+		static ResourceManager& ston() { return s_instance; }
+
 	private:
 		std::unordered_map<std::string, FactoryFunctor> m_factories;
+		static ResourceManager s_instance;
 	};
 
 }
