@@ -3,6 +3,7 @@
 #include "application.h"
 #include "mesh.h"
 #include "shader.h"
+#include "texture.h"
 using namespace ae;
 
 class SimpleApp : public ApplicationAdapter {
@@ -16,14 +17,18 @@ public:
 	virtual void onCreate(Application& app) override {
 		ResourceManager::ston().subscribe("shader", ShaderFactory("shader.glsl"));
 		ResourceManager::ston().subscribe("model", MeshFactory("bunny.obj"));
+		ResourceManager::ston().subscribe("texture", TextureFactory("matcap.png"));
+
 		shader = ResourceManager::ston().load<Shader>("shader");
 		model = ResourceManager::ston().load<Mesh>("model");
+		texture = ResourceManager::ston().load<Texture>("texture");
 
-		projView = Matrix4::perspective(
+		proj = Matrix4::perspective(
 			mathutils::toRadians(60.0f),
 			float(app.settings().window.width) / app.settings().window.height,
 			0.01f, 1000.0f
-		)  * Matrix4::translation(Vector3(0, 0, -6));
+		);
+		view = Matrix4::translation(Vector3(0, 0, -6));
 	}
 
 	virtual void onUpdate(Application& app, float dt) override {
@@ -38,9 +43,13 @@ public:
 
 		modelMat = Matrix4::rotationY(angle);
 
+		texture->bind();
+
 		shader->bind();
-		shader->get("projView").set(projView);
+		shader->get("proj").set(proj);
+		shader->get("view").set(view);
 		shader->get("model").set(modelMat);
+		shader->get("tex").set(0);
 
 		model->bind();
 		model->draw(Mesh::Triangles);
@@ -48,10 +57,11 @@ public:
 		app.swapBuffers();
 	};
 
-	Matrix4 projView, modelMat;
+	Matrix4 proj, view, modelMat;
 
 	ShaderPtr shader;
 	MeshPtr model;
+	TexturePtr texture;
 
 	float angle{ 0.0f };
 };

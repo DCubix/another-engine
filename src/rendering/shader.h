@@ -73,8 +73,10 @@ namespace ae {
 
 		intern::Uniform& get(const std::string& name);
 
+		GLuint program() const { return m_program; }
+
 	private:
-		uint32 m_program{ 0 };
+		GLuint m_program{ 0 };
 
 		DepthTest m_depthTest{ DepthTest::Less };
 		BlendMode m_blendMode{ BlendMode::Opaque };

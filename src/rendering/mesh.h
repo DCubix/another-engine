@@ -53,6 +53,9 @@ namespace ae {
 		bool dynamic() const { return m_dynamic; }
 
 		const AABB& aabb() const { return m_aabb; }
+		GLuint vao() const { return m_vao; }
+		GLuint vbo() const { return m_vbo; }
+		GLuint ebo() const { return m_ebo; }
 
 	private:
 		GLuint m_vao{ 0 }, m_vbo{ 0 }, m_ebo{ 0 };
