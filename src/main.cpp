@@ -15,13 +15,9 @@ public:
 	}
 
 	virtual void onCreate(Application& app) override {
-		ResourceManager::ston().subscribe("shader", ShaderFactory("shader.glsl"));
-		ResourceManager::ston().subscribe("model", MeshFactory("bunny.obj"));
-		ResourceManager::ston().subscribe("texture", TextureFactory("matcap.png"));
-
-		shader = ResourceManager::ston().load<Shader>("shader");
-		model = ResourceManager::ston().load<Mesh>("model");
-		texture = ResourceManager::ston().load<Texture>("texture");
+		shader = ResourceManager::ston().load<Shader>("shader", "shader.glsl");
+		model = ResourceManager::ston().load<Mesh>("model", "bunny.obj");
+		texture = ResourceManager::ston().load<Texture>("texture", "candy.jpg");
 
 		proj = Matrix4::perspective(
 			mathutils::toRadians(60.0f),
@@ -59,9 +55,9 @@ public:
 
 	Matrix4 proj, view, modelMat;
 
-	ShaderPtr shader;
-	MeshPtr model;
-	TexturePtr texture;
+	Shader* shader;
+	Mesh* model;
+	Texture* texture;
 
 	float angle{ 0.0f };
 };

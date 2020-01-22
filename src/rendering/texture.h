@@ -2,8 +2,9 @@
 #define TEXTURE_H
 
 #include "glad.h"
-#include "resource_manager.h"
 #include "integer.hpp"
+
+#include "resource_manager.h"
 
 #include <tuple>
 #include <vector>
@@ -59,7 +60,7 @@ namespace ae {
 		GLFormat getTextureFormat(TextureFormat format);
 	}
 
-	class Texture : public ResourceBase {
+	class Texture : public Resource {
 	public:
 		Texture();
 		~Texture();
@@ -83,6 +84,7 @@ namespace ae {
 
 		void setSize(uint32 width, uint32 height = 0, uint32 depth = 0);
 		void setData(const void* data, TextureFormat format);
+		void fromFile(const std::string& fileName) override;
 		void update(const void* data, TextureFormat format);
 		void setCubeMapData(const void* data, TextureFormat format, CubeMapSide side);
 
@@ -92,15 +94,6 @@ namespace ae {
 		TextureFilter m_mag{ TextureFilter::Linear };
 
 		uint32 m_width{ 0 }, m_height{ 0 }, m_depth{ 0 };
-	};
-
-	using TexturePtr = std::shared_ptr<Texture>;
-	class TextureFactory : public ResourceFactory {
-	public:
-		explicit TextureFactory(const std::string& fileName);
-		virtual ResourcePtr load() override;
-	private:
-		TexturePtr m_ptr;
 	};
 
 }

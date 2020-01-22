@@ -46,7 +46,7 @@ namespace ae {
 		};
 	}
 
-	class Shader : public ResourceBase {
+	class Shader : public Resource {
 	public:
 		Shader();
 		~Shader();
@@ -55,6 +55,8 @@ namespace ae {
 		void free();
 
 		void addShader(const std::string& source, ShaderType type);
+		void fromFile(const std::string& unifiedShaderFile) override;
+		void addUnifiedShader(const std::string& unifiedSource);
 		void link();
 
 		void bind();
@@ -86,15 +88,6 @@ namespace ae {
 		std::unordered_map<uint32, std::string> m_shaders;
 
 		intern::Uniform m_uniformHandler;
-	};
-
-	using ShaderPtr = std::shared_ptr<Shader>;
-	class ShaderFactory : public ResourceFactory {
-	public:
-		explicit ShaderFactory(const std::string& fileName);
-		virtual ResourcePtr load() override;
-	private:
-		ShaderPtr m_ptr;
 	};
 
 }

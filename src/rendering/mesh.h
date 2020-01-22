@@ -14,7 +14,7 @@ namespace ae {
 		Vector2 texCoord;
 	};
 
-	class Mesh : public ResourceBase {
+	class Mesh : public Resource {
 	public:
 		enum PrimitiveType {
 			Points = GL_POINTS,
@@ -42,6 +42,7 @@ namespace ae {
 		void addIndex(uint32 i);
 		void addTriangle(uint32 i0, uint32 i1, uint32 i2);
 		void setData(const std::vector<Vertex>& vertices, const std::vector<uint32>& indices);
+		void fromFile(const std::string& fileName) override;
 		void calculateNormals(PrimitiveType primitive);
 		void calculateTangents(PrimitiveType primitive);
 		void transformTexCoord(const Matrix4& mat);
@@ -58,6 +59,10 @@ namespace ae {
 		GLuint ebo() const { return m_ebo; }
 
 	private:
+		struct Face {
+			uint32 vertex, texCoord, normal;
+		};
+
 		GLuint m_vao{ 0 }, m_vbo{ 0 }, m_ebo{ 0 };
 		uint32 m_previousVBOSize{ 0 }, m_previousEBOSize{ 0 }, m_length{ 0 };
 
@@ -74,18 +79,6 @@ namespace ae {
 		void buildAABB();
 	};
 
-	using MeshPtr = std::shared_ptr<Mesh>;
-	class MeshFactory : public ResourceFactory {
-	public:
-		explicit MeshFactory(const std::string& fileName);
-		virtual ResourcePtr load() override;
-	private:
-		struct Face {
-			int32 vertex{ -1 }, texCoord{ -1 }, normal{ -1 }; 
-		};
-
-		MeshPtr m_ptr;
-	};
 }
 
 #endif // MESH_H

@@ -47,6 +47,105 @@ namespace ae {
 		glAttachShader(m_program, shader);
 	}
 
+	void Shader::addUnifiedShader(const std::string& unifiedSource) {
+		std::stringstream ss, outVS, outFS, outGS, outCS;
+		ss << unifiedSource;
+
+		ShaderType type = ShaderType::VertexShader;
+		std::string line;
+		while (std::getline(ss, line)) {
+			bool discard = false;
+
+			line = util::rtrim(line);
+
+			if (line[0] == '#') {
+				std::stringstream lineStream(line);
+				std::string preprocessor; lineStream >> preprocessor;
+
+				if (preprocessor == "#blendmode") {
+					std::string mode; lineStream >> mode;
+					BlendMode blend = BlendMode::Opaque;
+
+					if (mode == "ADD") blend = BlendMode::Add;
+					else if (mode == "ALPHA") blend = BlendMode::Alpha;
+
+					blendMode(blend);
+
+					discard = true;
+				} else if (preprocessor == "#depthtest") {
+					std::string mode; lineStream >> mode;
+					DepthTest depth = DepthTest::Less;
+
+					if (mode == "ALWAYS") depth = DepthTest::Always;
+					else if (mode == "EQUAL") depth = DepthTest::Equal;
+					else if (mode == "GREATER") depth = DepthTest::Greater;
+					else if (mode == "GREATER_EQUAL") depth = DepthTest::GreaterEqual;
+					else if (mode == "LESS") depth = DepthTest::Less;
+					else if (mode == "LESS_EQUAL") depth = DepthTest::LessEqual;
+					else if (mode == "NEVER") depth = DepthTest::Never;
+
+					depthTest(depth);
+
+					discard = true;
+				} else if (preprocessor == "#depthwrite") {
+					std::string mode; lineStream >> mode;
+
+					depthWrite(true);
+					if (mode == "FALSE" || mode == "false" || mode == "0") depthWrite(false);
+
+					discard = true;
+				}
+			} else if (line == "[VERTEX_SHADER]") {
+				type = ShaderType::VertexShader;
+				outVS << "#line 1" << "\n";
+				discard = true;
+			} else if (line == "[FRAGMENT_SHADER]") {
+				type = ShaderType::FragmentShader;
+				outFS << "#line 1" << "\n";
+				discard = true;
+			} else if (line == "[GEOMETRY_SHADER]") {
+				type = ShaderType::GeometryShader;
+				outGS << "#line 1" << "\n";
+				discard = true;
+			} else if (line == "[COMPUTE_SHADER]") {
+				type = ShaderType::ComputeShader;
+				outCS << "#line 1" << "\n";
+				discard = true;
+			}
+
+			if (!discard) {
+				switch (type) {
+					case VertexShader: outVS << line << "\n"; break;
+					case FragmentShader: outFS << line << "\n"; break;
+					case GeometryShader: outGS << line << "\n"; break;
+					case ComputeShader: outCS << line << "\n"; break;
+				}
+			}
+		}
+
+		const std::string vs = outVS.str(),
+					fs = outFS.str(),
+					gs = outGS.str(),
+					cs = outCS.str();
+		const std::string versionHeader = "#version 440 core\n";
+		if (!vs.empty()) addShader(versionHeader + vs, ShaderType::VertexShader);
+		if (!fs.empty()) addShader(versionHeader + fs, ShaderType::FragmentShader);
+		if (!gs.empty()) addShader(versionHeader + gs, ShaderType::GeometryShader);
+		if (!cs.empty()) addShader(versionHeader + cs, ShaderType::ComputeShader);
+		link();
+	}
+
+	void Shader::fromFile(const std::string& unifiedShaderFile) {
+		auto file = FileSystem::ston().open(unifiedShaderFile);
+		auto sz = file.size();
+		std::string data(sz, '\0');
+
+		if (file.read(data.data(), sz) == sz) {
+			addUnifiedShader(data);
+		}
+		file.close();
+	}
+
 	void Shader::link() {
 		glLinkProgram(m_program);
 		int32 status;
@@ -104,108 +203,5 @@ namespace ae {
 	void intern::Uniform::set(const Vector3& v) { glUniform3f(loc, v.x, v.y, v.z); }
 	void intern::Uniform::set(const Vector4& v) { glUniform4f(loc, v.x, v.y, v.z, v.w); }
 	void intern::Uniform::set(Matrix4 v) { glUniformMatrix4fv(loc, 1, true, v.data()); }
-
-	ShaderFactory::ShaderFactory(const std::string& fileName) {
-		this->fileName(fileName);
-	}
-
-	ResourcePtr ShaderFactory::load() {
-		if (!m_ptr) {
-			m_ptr = std::make_shared<Shader>();
-			auto file = FileSystem::ston().open(fileName());
-			auto sz = file.size();
-			std::string data(sz, '\0');
-
-			if (file.read(data.data(), sz) == sz) {
-				std::stringstream ss, outVS, outFS, outGS, outCS;
-				ss << data.data();
-
-				ShaderType type = ShaderType::VertexShader;
-				std::string line;
-				while (std::getline(ss, line)) {
-					bool discard = false;
-
-					line = util::rtrim(line);
-
-					if (line[0] == '#') {
-						std::stringstream lineStream(line);
-						std::string preprocessor; lineStream >> preprocessor;
-
-						if (preprocessor == "#blendmode") {
-							std::string mode; lineStream >> mode;
-							BlendMode blend = BlendMode::Opaque;
-
-							if (mode == "ADD") blend = BlendMode::Add;
-							else if (mode == "ALPHA") blend = BlendMode::Alpha;
-
-							m_ptr->blendMode(blend);
-
-							discard = true;
-						} else if (preprocessor == "#depthtest") {
-							std::string mode; lineStream >> mode;
-							DepthTest depth = DepthTest::Less;
-
-							if (mode == "ALWAYS") depth = DepthTest::Always;
-							else if (mode == "EQUAL") depth = DepthTest::Equal;
-							else if (mode == "GREATER") depth = DepthTest::Greater;
-							else if (mode == "GREATER_EQUAL") depth = DepthTest::GreaterEqual;
-							else if (mode == "LESS") depth = DepthTest::Less;
-							else if (mode == "LESS_EQUAL") depth = DepthTest::LessEqual;
-							else if (mode == "NEVER") depth = DepthTest::Never;
-
-							m_ptr->depthTest(depth);
-
-							discard = true;
-						} else if (preprocessor == "#depthwrite") {
-							std::string mode; lineStream >> mode;
-
-							m_ptr->depthWrite(true);
-							if (mode == "FALSE" || mode == "false" || mode == "0") m_ptr->depthWrite(false);
-
-							discard = true;
-						}
-					} else if (line == "[VERTEX_SHADER]") {
-						type = ShaderType::VertexShader;
-						outVS << "#line 1" << "\n";
-						discard = true;
-					} else if (line == "[FRAGMENT_SHADER]") {
-						type = ShaderType::FragmentShader;
-						outFS << "#line 1" << "\n";
-						discard = true;
-					} else if (line == "[GEOMETRY_SHADER]") {
-						type = ShaderType::GeometryShader;
-						outGS << "#line 1" << "\n";
-						discard = true;
-					} else if (line == "[COMPUTE_SHADER]") {
-						type = ShaderType::ComputeShader;
-						outCS << "#line 1" << "\n";
-						discard = true;
-					}
-
-					if (!discard) {
-						switch (type) {
-							case VertexShader: outVS << line << "\n"; break;
-							case FragmentShader: outFS << line << "\n"; break;
-							case GeometryShader: outGS << line << "\n"; break;
-							case ComputeShader: outCS << line << "\n"; break;
-						}
-					}
-				}
-
-				const std::string vs = outVS.str(),
-							fs = outFS.str(),
-							gs = outGS.str(),
-							cs = outCS.str();
-				const std::string versionHeader = "#version 440 core\n";
-				if (!vs.empty()) m_ptr->addShader(versionHeader + vs, ShaderType::VertexShader);
-				if (!fs.empty()) m_ptr->addShader(versionHeader + fs, ShaderType::FragmentShader);
-				if (!gs.empty()) m_ptr->addShader(versionHeader + gs, ShaderType::GeometryShader);
-				if (!cs.empty()) m_ptr->addShader(versionHeader + cs, ShaderType::ComputeShader);
-				m_ptr->link();
-			}
-			file.close();
-		}
-		return m_ptr;
-	}
 
 }

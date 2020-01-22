@@ -1,6 +1,7 @@
 #include "texture.h"
 
 #include "stb_image.h"
+#include "file_system.h"
 
 namespace ae {
 
@@ -76,6 +77,29 @@ namespace ae {
 		}
 	}
 
+	void Texture::fromFile(const std::string& fileName) {
+		auto file = FileSystem::ston().open(fileName);
+		auto sz = file.size();
+		std::vector<uint8> data;
+		data.resize(sz);
+
+		if (file.read(data.data(), sz) == sz) {
+			int w, h, comp;
+			stbi_set_flip_vertically_on_load(1);
+			unsigned char* imgData = stbi_load_from_memory(data.data(), sz, &w, &h, &comp, STBI_rgb_alpha);
+			if (imgData) {
+				setSize(w, h);
+				bind();
+				filter(TextureFilter::Linear, TextureFilter::LinearMipLinear);
+				wrap(TextureWrap::Repeat, TextureWrap::Repeat);
+				setData(imgData, TextureFormat::RGBA);
+				unbind();
+				stbi_image_free(imgData);
+			}
+		}
+		file.close();
+	}
+
 	void Texture::update(const void* data, TextureFormat format) {
 		glBindTexture(GLenum(m_target), m_id);
 		auto [ifmt, fmt, type, comps] = intern::getTextureFormat(format);
@@ -121,37 +145,6 @@ namespace ae {
 	void Texture::filter(TextureFilter min, TextureFilter mag) {
 		glTexParameteri(GLenum(m_target), GL_TEXTURE_MIN_FILTER, GLenum(min));
 		glTexParameteri(GLenum(m_target), GL_TEXTURE_MAG_FILTER, GLenum(mag));
-	}
-
-	TextureFactory::TextureFactory(const std::string& fileName) {
-		this->fileName(fileName);
-	}
-
-	ResourcePtr TextureFactory::load() {
-		if (!m_ptr) {
-			m_ptr = std::make_shared<Texture>();
-			auto file = FileSystem::ston().open(fileName());
-			auto sz = file.size();
-			std::vector<uint8> data;
-			data.resize(sz);
-
-			if (file.read(data.data(), sz) == sz) {
-				int w, h, comp;
-				stbi_set_flip_vertically_on_load(1);
-				unsigned char* imgData = stbi_load_from_memory(data.data(), sz, &w, &h, &comp, STBI_rgb_alpha);
-				if (imgData) {
-					m_ptr->setSize(w, h);
-					m_ptr->bind();
-					m_ptr->filter(TextureFilter::Linear, TextureFilter::LinearMipLinear);
-					m_ptr->wrap(TextureWrap::Repeat, TextureWrap::Repeat);
-					m_ptr->setData(imgData, TextureFormat::RGBA);
-					m_ptr->unbind();
-					stbi_image_free(imgData);
-				}
-			}
-			file.close();
-		}
-		return m_ptr;
 	}
 
 }
