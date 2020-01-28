@@ -52,6 +52,10 @@ namespace mathutils {
 	inline float toDegrees(float rads) {
 		return rads / consts::Pi * 180.0f;
 	}
+
+	inline float random(float from, float to) {
+		return from + (float(rand()) / RAND_MAX) * (to - from);
+	}
 }
 
 class Vector2 {

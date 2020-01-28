@@ -3,13 +3,21 @@
 namespace ae {
 
 	void Entity::cleanup() {
-		m_behaviors.clear();
+		m_components.clear();
 		m_position = Vector3(0.0f);
 		m_rotation = Quaternion();
 		m_scale = Vector3(1.0f);
 		m_life = -1.0f;
 		m_init = false;
 		m_dead = false;
+	}
+
+	void Entity::update(EntityWorld* world, float dt) {
+		for (auto&& [type, b] : m_components) {
+			if (!m_init) b->onCreate(*world);
+			if (!b->enabled()) continue;
+			b->onUpdate(*world, dt);
+		}
 	}
 
 	Matrix4 Entity::transform() const {
@@ -57,11 +65,7 @@ namespace ae {
 					entity->m_dead = true;
 					entity->m_life = 0.0f;
 				}
-				for (auto&& behavior : entity->behaviors()) {
-					if (!entity->m_init) behavior->onCreate(*this);
-					if (!behavior->enabled()) continue;
-					behavior->onUpdate(*this, dt);
-				}
+				entity->update(this, dt);
 				entity->m_init = true;
 			} else continue;
 		}
@@ -70,9 +74,9 @@ namespace ae {
 		while (it != m_activePool.end()) {
 			if ((*it)->m_dead) {
 				auto&& ent = std::move(*it);
-				for (auto&& behavior : ent->behaviors()) {
-					if (!behavior->enabled()) continue;
-					behavior->onDestroy(*this);
+				for (auto&& [type, b] : ent->components()) {
+					if (!b->enabled()) continue;
+					b->onUpdate(*this, dt);
 				}
 				it = m_activePool.erase(it);
 				m_inactivePool.push_back(std::move(ent));
