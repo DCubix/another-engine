@@ -5,6 +5,7 @@
 #include <cmath>
 #include <array>
 #include <ostream>
+#include <algorithm>
 
 #if defined(__SSE__) || (_M_IX86_FP > 0) || (_M_X64 > 0)
 	#define HAS_SSE
@@ -348,6 +349,20 @@ public:
 		return rotation(f, u, r);
 	}
 
+	inline static Matrix4 lookAt(const Vector3& eye, const Vector3& at, const Vector3& up) {
+		const Vector3 z = (eye - at).normalized();
+		const Vector3 x = up.cross(z).normalized();
+		const Vector3 y = z.cross(x).normalized();
+
+		const Matrix4 r({
+			x.x, x.y, x.z, -x.dot(eye),
+			y.x, y.y, y.z, -y.dot(eye),
+			z.x, z.y, z.z, -z.dot(eye),
+			0.0f, 0.0f, 0.0f, 1.0f
+		});
+		return r;
+	}
+
 	inline static Matrix4 angleAxis(float angle, const Vector3& axis) {
 		const float s = std::sin(angle),
 					c = std::cos(angle),
@@ -606,13 +621,50 @@ inline std::ostream& operator<<(std::ostream& o, const Matrix4& v) {
 
 class Quaternion {
 public:
-	inline Quaternion() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
+	inline Quaternion() : x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
 	inline Quaternion(float v) : x(v), y(v), z(v), w(z) {}
 	inline Quaternion(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
 	inline Quaternion(const Vector2& v, float z = 0.0f, float w = 1.0f) : x(v.x), y(v.y), z(z), w(w) {}
 	inline Quaternion(const Vector3& v, float w = 1.0f) : x(v.x), y(v.y), z(v.z), w(w) {}
 	inline Quaternion(const Vector4& v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
 	inline Quaternion(const Quaternion& v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
+	inline Quaternion(const Matrix4& a) {
+		float trace = a[0][0] + a[1][1] + a[2][2];
+
+		if(trace > 0) {
+			float s = 0.5f / std::sqrt(trace + 1.0f);
+			w = 0.25f / s;
+			x = (a[1][2] - a[2][1]) * s;
+			y = (a[2][0] - a[0][2]) * s;
+			z = (a[0][1] - a[1][0]) * s;
+		} else {
+			if(a[0][0] > a[1][1] && a[0][0] > a[2][2]) {
+				float s = 2.0f * std::sqrt(1.0f + a[0][0] - a[1][1] - a[2][2]);
+				w = (a[1][2] - a[2][1]) / s;
+				x = 0.25f * s;
+				y = (a[1][0] + a[0][1]) / s;
+				z = (a[2][0] + a[0][2]) / s;
+			} else if(a[1][1] > a[2][2]) {
+				float s = 2.0f * std::sqrt(1.0f + a[1][1] - a[0][0] - a[2][2]);
+				w = (a[2][0] - a[0][2]) / s;
+				x = (a[1][0] + a[0][1]) / s;
+				y = 0.25f * s;
+				z = (a[2][1] + a[1][2]) / s;
+			} else {
+				float s = 2.0f * std::sqrt(1.0f + a[2][2] - a[0][0] - a[1][1]);
+				w = (a[0][1] - a[1][0] ) / s;
+				x = (a[2][0] + a[0][2] ) / s;
+				y = (a[1][2] + a[2][1] ) / s;
+				z = 0.25f * s;
+			}
+		}
+
+		float length = std::sqrt(x * x + y * y + z * z + w * w);
+		x /= length;
+		y /= length;
+		z /= length;
+		w /= length;
+	}
 
 	inline static Quaternion axisAngle(const Vector3& axis, float angle) {
 		Quaternion q{};
@@ -623,6 +675,10 @@ public:
 		q.z = hs * axis.z;
 		q.w = hc;
 		return q;
+	}
+
+	inline static Quaternion lookAt(const Vector3& eye, const Vector3& at, const Vector3& up) {
+		return Quaternion(Matrix4::lookAt(eye, at, up));
 	}
 
 	inline Vector2 toVector2() const { return Vector2(x, y); }
@@ -684,6 +740,7 @@ public:
 		const Vector3 forward = Vector3(2.0f * (x * z - w * y), 2.0f * (y * z + w * x), 1.0f - 2.0f * (x * x + y * y));
 		const Vector3 up = Vector3(2.0f * (x * y + w * z), 1.0f - 2.0f * (x * x + z * z), 2.0f * (y * z - w * x));
 		const Vector3 right = Vector3(1.0f - 2.0f * (y * y + z * z), 2.0f * (x * y - w * z), 2.0f * (x * z + w * y));
+
 		return Matrix4::rotation(forward, up, right);
 	}
 
