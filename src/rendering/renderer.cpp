@@ -69,6 +69,7 @@ namespace ae {
 			uniform int uLightCount = 0;
 
 			uniform vec3 uEyePos;
+			uniform vec3 uAmbient;
 
 			uniform Material uMaterial;
 
@@ -85,7 +86,7 @@ namespace ae {
 				vec3 V = normalize(uEyePos - VS.position);
 				vec3 N = normalize(VS.normal);
 
-				vec3 lighting = vec3(0.0);
+				vec3 lighting = uAmbient;
 				for (int i = 0; i < uLightCount; i++) {
 					Light light = uLights[i];
 					if (light.intensity <= 0.0 || light.radius <= 0.0) continue;
@@ -136,7 +137,7 @@ namespace ae {
 					}
 				}
 
-				fragColor = vec4(lighting, 1.0);
+				fragColor = vec4(uMaterial.base * lighting, 1.0);
 			}
 		)";
 
@@ -163,6 +164,7 @@ namespace ae {
 		m_uber->get("uProjection").set(m_camera->projection(aspect));
 		m_uber->get("uView").set(m_camera->viewTransform());
 		m_uber->get("uEyePos").set(m_camera->owner()->position());
+		m_uber->get("uAmbient").set(m_ambient);
 
 		int i = 0;
 		world->each([&](Entity* ent, LightComponent* light) {

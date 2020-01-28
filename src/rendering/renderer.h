@@ -93,9 +93,14 @@ namespace ae {
 		CameraComponent* camera() { return m_camera; }
 		void camera(CameraComponent* camera) { m_camera = camera; }
 
+		const Vector3& ambient() const { return m_ambient; }
+		void ambient(const Vector3& ambient) { m_ambient = ambient; }
+
 	private:
 		std::unique_ptr<Shader> m_uber;
 		CameraComponent* m_camera{ nullptr };
+
+		Vector3 m_ambient{ Vector3(0.15f) };
 	};
 
 }
