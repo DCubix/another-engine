@@ -356,6 +356,7 @@ namespace ae {
 		m_uber->get("uAmbient").set(m_ambient);
 
 		int i = 0;
+		int shadowIndex = 0;
 		world->each([&](Entity* ent, LightComponent* light) {
 			auto&& istr = std::to_string(i);
 			m_uber->get("uLights[" + istr + "].type").set(int(light->type()));
@@ -366,17 +367,20 @@ namespace ae {
 			m_uber->get("uLights[" + istr + "].radius").set(light->radius());
 			m_uber->get("uLights[" + istr + "].cutoff").set(light->cutOff());
 			m_uber->get("uLights[" + istr + "].viewProj").set(light->projection() * light->viewTransform());
-			i++;
 
 			if ((light->type() == LightType::Directional || light->type() == LightType::Spot) && light->castsShadow()) {
-				m_uber->get("uLights[" + istr + "].hasShadow").set(1);
 				renderShadows(world, light);
 				m_uber->bind();
-				light->shadowBuffer()->depthAttachment()->bind(0);
-				m_uber->get("uShadows[" + istr + "]").set(0);
+				light->shadowBuffer()->depthAttachment()->bind(shadowIndex);
+
+				m_uber->get("uLights[" + istr + "].hasShadow").set(1);
+				m_uber->get("uShadows[" + istr + "]").set(shadowIndex);
+				shadowIndex++;
 			} else {
 				m_uber->get("uLights[" + istr + "].hasShadow").set(0);
 			}
+
+			i++;
 		});
 		m_uber->get("uLightCount").set(i);
 
@@ -390,7 +394,7 @@ namespace ae {
 			m_uber->get("uMaterial.shininess").set(mesh->material().shininess);
 			m_uber->get("uMaterial.specular").set(mesh->material().specular);
 
-			uint32 slot = 1;
+			uint32 slot = shadowIndex;
 			for (uint32 k = 0; k < Material::SlotCount; k++) {
 				Texture* tex = mesh->material().textures[k];
 				if (tex == nullptr) continue;

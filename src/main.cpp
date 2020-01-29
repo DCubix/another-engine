@@ -57,6 +57,15 @@ public:
 		lcomp->castsShadow(true);
 		light->rotation(Quaternion::lookAt(light->position(), Vector3(0.0f, 1.0f, 0.0f), Vector3(0.0f, 1.0f, 0.0f)));
 
+		light = world->create();
+		light->position(Vector3(-7.0f, 8.0f, 7.0f));
+		auto lcomp2 = light->createComponent<LightComponent>();
+		lcomp2->type(LightType::Spot);
+		lcomp2->radius(40.0f);
+		lcomp2->cutOff(consts::QuarPi * 0.25f);
+		lcomp2->castsShadow(true);
+		light->rotation(Quaternion::lookAt(light->position(), Vector3(0.0f, 1.0f, 0.0f), Vector3(0.0f, 1.0f, 0.0f)));
+
 	}
 
 	virtual void onUpdate(Application& app, float dt) override {
@@ -70,7 +79,7 @@ public:
 	}
 
 	virtual void onRender(Application& app) override {
-		app.clear();
+		app.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, 0.0f, 0.0f, 0.0f, 1.0f);
 
 		renderer->render(world.get(), app.settings().window.width, app.settings().window.height);
 

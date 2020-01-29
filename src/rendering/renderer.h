@@ -10,7 +10,7 @@
 
 namespace ae {
 
-	constexpr uint32 shadowMapSize = 2048;
+	constexpr uint32 shadowMapSize = 1024;
 
 	enum class LightType : uint8 {
 		Directional = 0,
