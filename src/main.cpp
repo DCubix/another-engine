@@ -22,7 +22,7 @@ public:
 		world = std::make_unique<EntityWorld>();
 		renderer = std::make_unique<Renderer>();
 
-		renderer->ambient(Vector3(0.1f));
+		renderer->ambient(Vector3(0.02f));
 
 		bunny = world->create();
 		camera = world->create();
