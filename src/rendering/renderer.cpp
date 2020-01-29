@@ -138,7 +138,7 @@ namespace ae {
 					float NoL = max(dot(N, L), 0.0);
 					if (att > 0.0) {
 						float fact = NoL * att;
-						fact += rim(V, N) * 2.0 * fact * light.intensity;
+						fact += rim(V, N) * fact;
 
 						vec3 R = reflect(-L, N);
 
@@ -148,14 +148,15 @@ namespace ae {
 						}
 
 						float spec = max(0.0, dot(R, V));
-						spec = att * pow(spec, shin * 255.0) * uMaterial.specular * light.intensity;
+						spec = att * pow(spec, shin * 255.0) * uMaterial.specular;
 
 						if (uSpecularOn) {
 							spec *= texture(uSpecular, VS.texCoord).g;
 						}
 
-						lighting += (light.color * fact);
-						if (spec > 0.0) lighting += (light.color * spec);
+						vec3 col = (light.color * fact);
+						if (spec > 0.0) col += (light.color * spec);
+						lighting += col * light.intensity;
 					}
 				}
 

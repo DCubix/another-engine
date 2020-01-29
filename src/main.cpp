@@ -22,6 +22,8 @@ public:
 		world = std::make_unique<EntityWorld>();
 		renderer = std::make_unique<Renderer>();
 
+		renderer->ambient(Vector3(0.1f));
+
 		bunny = world->create();
 		camera = world->create();
 		floor = world->create();
@@ -29,29 +31,29 @@ public:
 		bunnyModel = ResourceManager::ston().load<Mesh>("model", "bunny.obj");
 		floorModel = ResourceManager::ston().load<Mesh>("floor", "cube.obj");
 
-		brickDiff = ResourceManager::ston().load<Texture>("diff", "diff.png");
-		brickNorm = ResourceManager::ston().load<Texture>("norm", "norm.png");
-		brickSpec = ResourceManager::ston().load<Texture>("spec", "spec.png");
-
 		camera->createComponent<CameraComponent>();
-		bunny->createComponent<MeshComponent>(bunnyModel);
+		auto&& bcomp = bunny->createComponent<MeshComponent>(bunnyModel);
 		auto&& mcomp = floor->createComponent<MeshComponent>(floorModel);
 
 		floor->scale(Vector3(10.0f, 0.02f, 10.0f));
 		floor->position(Vector3(0.0f, -1.0f, 0.0f));
 
-		mcomp->material().textures[Material::SlotDiffuse] = brickDiff;
-		mcomp->material().textures[Material::SlotNormal] = brickNorm;
-		mcomp->material().textures[Material::SlotSpecular] = brickSpec;
+		mcomp->material().textures[Material::SlotDiffuse] = ResourceManager::ston().load<Texture>("diff", "diff.png");
+		mcomp->material().textures[Material::SlotNormal] = ResourceManager::ston().load<Texture>("norm", "norm.png");
+		mcomp->material().textures[Material::SlotSpecular] = ResourceManager::ston().load<Texture>("spec", "spec.png");
 		mcomp->material().shininess = 0.8f;
 		mcomp->material().specular = 2.0f;
+
+		bcomp->material().textures[Material::SlotDiffuse] = ResourceManager::ston().load<Texture>("bunny_diff", "bunny_diff.png");
+		bcomp->material().textures[Material::SlotNormal] = ResourceManager::ston().load<Texture>("bunny_norm", "bunny_norm.png");
+		bcomp->material().specular = 0.01f;
+		bcomp->material().shininess = 0.01f;
 
 		for (uint32 i = 0; i < LIGHTS; i++) {
 			lights[i] = world->create();
 			auto&& light = lights[i]->createComponent<LightComponent>();
 			light->type(LightType::Point);
-			light->radius(mathutils::random(4.0f, 12.0f));
-			light->intensity(0.5f);
+			light->radius(mathutils::random(10.0f, 30.0f));
 			light->color(Vector3(
 				mathutils::random(0.25f, 1.0f),
 				mathutils::random(0.25f, 1.0f),
@@ -69,10 +71,13 @@ public:
 
 		for (uint32 i = 0; i < LIGHTS; i++) {
 			uint32 k = i + 1;
+			auto&& comp = lights[i]->getComponent<LightComponent>();
+			float blink = std::sin(angle * k) * 0.5f + 0.5f;
+			comp->intensity(blink);
 			lights[i]->position(Vector3(
-				std::sin(k * angle * 0.25f) * (std::cos(angle) * 6.0f),
-				2.0f,
-				std::cos(k * angle * 0.25f) * (-std::sin(angle) * 6.0f)
+				std::sin(k * angle * 0.1f) * 6.0f,
+				0.5f,
+				std::cos(k * angle * 0.1f) * 6.0f
 			));
 		}
 
