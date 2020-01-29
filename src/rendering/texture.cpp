@@ -68,10 +68,10 @@ namespace ae {
 			case TextureTarget::Texture3D: glTexImage3D(GLenum(m_target), 0, ifmt, m_width, m_height, m_depth, 0, fmt, type, data); break;
 		}
 		
-		if (m_mag == TextureFilter::LinearMipLinear ||
-			m_mag == TextureFilter::LinearMipNearest ||
-			m_mag == TextureFilter::NearestMipLinear ||
-			m_mag == TextureFilter::NearestMipNearest)
+		if (m_min == TextureFilter::LinearMipLinear ||
+			m_min == TextureFilter::LinearMipNearest ||
+			m_min == TextureFilter::NearestMipLinear ||
+			m_min == TextureFilter::NearestMipNearest)
 		{
 			glGenerateMipmap(GLenum(m_target));
 		}
@@ -90,7 +90,7 @@ namespace ae {
 			if (imgData) {
 				setSize(w, h);
 				bind();
-				filter(TextureFilter::Linear, TextureFilter::LinearMipLinear);
+				filter(TextureFilter::LinearMipLinear, TextureFilter::Linear);
 				wrap(TextureWrap::Repeat, TextureWrap::Repeat);
 				setData(imgData, TextureFormat::RGBA);
 				unbind();
@@ -109,10 +109,10 @@ namespace ae {
 			case TextureTarget::Texture2D: glTexSubImage2D(GLenum(m_target), 0, 0, 0, m_width, m_height, fmt, type, data); break;
 			case TextureTarget::Texture3D: glTexSubImage3D(GLenum(m_target), 0, 0, 0, 0, m_width, m_height, m_depth, fmt, type, data); break;
 		}
-		if (m_mag == TextureFilter::LinearMipLinear ||
-			m_mag == TextureFilter::LinearMipNearest ||
-			m_mag == TextureFilter::NearestMipLinear ||
-			m_mag == TextureFilter::NearestMipNearest)
+		if (m_min == TextureFilter::LinearMipLinear ||
+			m_min == TextureFilter::LinearMipNearest ||
+			m_min == TextureFilter::NearestMipLinear ||
+			m_min == TextureFilter::NearestMipNearest)
 		{
 			glGenerateMipmap(GLenum(m_target));
 		}
@@ -122,10 +122,10 @@ namespace ae {
 		glBindTexture(GLenum(m_target), m_id);
 		auto [ifmt, fmt, type, comps] = intern::getTextureFormat(format);
 		glTexImage2D(GLenum(side), 0, ifmt, m_width, m_height, 0, fmt, type, data);
-		if (m_mag == TextureFilter::LinearMipLinear ||
-			m_mag == TextureFilter::LinearMipNearest ||
-			m_mag == TextureFilter::NearestMipLinear ||
-			m_mag == TextureFilter::NearestMipNearest)
+		if (m_min == TextureFilter::LinearMipLinear ||
+			m_min == TextureFilter::LinearMipNearest ||
+			m_min == TextureFilter::NearestMipLinear ||
+			m_min == TextureFilter::NearestMipNearest)
 		{
 			glGenerateMipmap(GLenum(m_target));
 		}
@@ -136,15 +136,16 @@ namespace ae {
 	}
 
 	void Texture::wrap(TextureWrap wrapS, TextureWrap wrapT, TextureWrap wrapR) {
-		glTexParameteri(GLenum(m_target), GL_TEXTURE_WRAP_S, GLenum(wrapS));
-		glTexParameteri(GLenum(m_target), GL_TEXTURE_WRAP_T, GLenum(wrapT));
+		glTexParameteri(GLenum(m_target), GL_TEXTURE_WRAP_S, int(wrapS));
+		glTexParameteri(GLenum(m_target), GL_TEXTURE_WRAP_T, int(wrapT));
 		if (m_target == TextureTarget::CubeMap || m_target == TextureTarget::Texture3D)
-			glTexParameteri(GLenum(m_target), GL_TEXTURE_WRAP_R, GLenum(wrapR));
+			glTexParameteri(GLenum(m_target), GL_TEXTURE_WRAP_R, int(wrapR));
 	}
 
 	void Texture::filter(TextureFilter min, TextureFilter mag) {
-		glTexParameteri(GLenum(m_target), GL_TEXTURE_MIN_FILTER, GLenum(min));
-		glTexParameteri(GLenum(m_target), GL_TEXTURE_MAG_FILTER, GLenum(mag));
+		glTexParameteri(GLenum(m_target), GL_TEXTURE_MIN_FILTER, int(min));
+		glTexParameteri(GLenum(m_target), GL_TEXTURE_MAG_FILTER, int(mag));
+		m_min = min;
 	}
 
 }

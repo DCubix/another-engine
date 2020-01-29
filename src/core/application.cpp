@@ -108,6 +108,7 @@ namespace ae {
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		glEnable(GL_FRAMEBUFFER_SRGB);
 
 		mainLoop();
 	}

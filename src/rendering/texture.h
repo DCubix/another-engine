@@ -91,7 +91,7 @@ namespace ae {
 	private:
 		GLuint m_id{ 0 };
 		TextureTarget m_target{ TextureTarget::Texture2D };
-		TextureFilter m_mag{ TextureFilter::Linear };
+		TextureFilter m_min{ TextureFilter::Linear };
 
 		uint32 m_width{ 0 }, m_height{ 0 }, m_depth{ 0 };
 	};
