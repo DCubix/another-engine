@@ -6,8 +6,11 @@
 #include "shader.h"
 #include "texture.h"
 #include "game_logic.h"
+#include "framebuffer.h"
 
 namespace ae {
+
+	constexpr uint32 shadowMapSize = 2048;
 
 	enum class LightType : uint8 {
 		Directional = 0,
@@ -16,6 +19,7 @@ namespace ae {
 	};
 
 	class LightComponent : public Component {
+		friend class Renderer;
 	public:
 		LightType type() const { return m_type; }
 		void type(LightType type) { m_type = type; }
@@ -35,12 +39,37 @@ namespace ae {
 		float cutOff() const { return m_cutoff; }
 		void cutOff(float cutOff) { m_cutoff = cutOff; }
 
+		bool castsShadow() const { return m_castsShadow; }
+		void castsShadow(bool v) { m_castsShadow = v; }
+
+		FrameBuffer* shadowBuffer() { return m_shadowBuffer.get(); }
+
+		inline Matrix4 projection() const {
+			return m_type == LightType::Directional ?
+					Matrix4::ortho(-8.0f, 8.0f, -8.0f, 8.0f, 0.01f, 1000.0f) :
+					Matrix4::perspective(m_cutoff, 1.0f, 0.01f, m_radius * 2.0f);
+		}
+
+		inline Matrix4 viewTransform() const {
+			return owner()->rotation().conjugated().toMatrix4() *
+					Matrix4::translation(owner()->position() * -1.0f);
+		}
+
 	private:
 		LightType m_type{ LightType::Directional };
 		Vector3 m_color{ Vector3(1.0f) };
 		float m_radius{ 16.0f }, m_cutoff{ 0.5f }, m_intensity{ 1.0f };
+		bool m_castsShadow{ true };
+
+		std::unique_ptr<FrameBuffer> m_shadowBuffer;
+
+		inline void createShadowBuffer() {
+			m_shadowBuffer = std::make_unique<FrameBuffer>();
+			m_shadowBuffer->create(shadowMapSize, shadowMapSize);
+			m_shadowBuffer->depth();
+		}
 	};
-	
+
 	struct Material {
 		enum SlotType {
 			SlotDiffuse = 0,
@@ -53,6 +82,8 @@ namespace ae {
 		float shininess{ 0.15f };
 		float specular{ 1.0f };
 		Texture* textures[SlotCount];
+		bool castsShadow{ true };
+		bool receivesShadow{ true };
 	};
 
 	class MeshComponent : public Component {
@@ -106,10 +137,13 @@ namespace ae {
 		void ambient(const Vector3& ambient) { m_ambient = ambient; }
 
 	private:
-		std::unique_ptr<Shader> m_uber;
+		std::unique_ptr<Shader> m_uber, m_shadows;
+
 		CameraComponent* m_camera{ nullptr };
 
 		Vector3 m_ambient{ Vector3(0.15f) };
+
+		void renderShadows(EntityWorld* world, LightComponent* comp);
 	};
 
 }

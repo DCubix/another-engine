@@ -75,7 +75,7 @@ namespace ae {
 		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
 		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -108,7 +108,6 @@ namespace ae {
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-		glEnable(GL_FRAMEBUFFER_SRGB);
 
 		mainLoop();
 	}

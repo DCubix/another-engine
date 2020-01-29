@@ -3,7 +3,7 @@
 #include <iostream>
 
 namespace ae {
-	void FrameBuffer::destroy() {
+	void FrameBuffer::free() {
 		if (m_id) {
 			glDeleteFramebuffers(1, &m_id);
 			m_id = 0;
@@ -78,8 +78,8 @@ namespace ae {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	void FrameBuffer::depth(uint32 depthSize) {
-		if (m_depthAttachment->id() != 0) {
+	void FrameBuffer::depth() {
+		if (m_depthAttachment) {
 			return;
 		}
 
@@ -105,7 +105,7 @@ namespace ae {
 	}
 
 	void FrameBuffer::stencil() {
-		if (m_stencilAttachment->id() != 0) {
+		if (m_stencilAttachment) {
 			return;
 		}
 
@@ -204,5 +204,10 @@ namespace ae {
 				m_viewport[3]
 			);
 		}
+	}
+
+	void FrameBuffer::clear(ClearBufferMask mask, float r, float g, float b, float a) {
+		glClearColor(r, g, b, a);
+		glClear(mask);
 	}
 }

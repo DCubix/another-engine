@@ -9,7 +9,6 @@
 #include "renderer.h"
 using namespace ae;
 
-#define LIGHTS 4
 class SimpleApp : public ApplicationAdapter {
 public:
 	virtual void onSetup(Application& app) override {
@@ -22,7 +21,7 @@ public:
 		world = std::make_unique<EntityWorld>();
 		renderer = std::make_unique<Renderer>();
 
-		renderer->ambient(Vector3(0.02f));
+		renderer->ambient(Vector3(0.001f));
 
 		bunny = world->create();
 		camera = world->create();
@@ -36,7 +35,7 @@ public:
 		auto mcomp = floor->createComponent<MeshComponent>(floorModel);
 
 		floor->scale(Vector3(10.0f, 0.02f, 10.0f));
-		floor->position(Vector3(0.0f, -1.0f, 0.0f));
+		floor->position(Vector3(0.0f, -0.7f, 0.0f));
 
 		mcomp->material().textures[Material::SlotDiffuse] = ResourceManager::ston().load<Texture>("diff", "diff.png");
 		mcomp->material().textures[Material::SlotNormal] = ResourceManager::ston().load<Texture>("norm", "norm.png");
@@ -49,17 +48,15 @@ public:
 		bcomp->material().specular = 0.01f;
 		bcomp->material().shininess = 0.01f;
 
-		for (uint32 i = 0; i < LIGHTS; i++) {
-			lights[i] = world->create();
-			auto light = lights[i]->createComponent<LightComponent>();
-			light->type(LightType::Point);
-			light->radius(mathutils::random(10.0f, 30.0f));
-			light->color(Vector3(
-				mathutils::random(0.25f, 1.0f),
-				mathutils::random(0.25f, 1.0f),
-				mathutils::random(0.25f, 1.0f)
-			));
-		}
+		Entity* light = world->create();
+		light->position(Vector3(7.0f, 8.0f, 7.0f));
+		auto lcomp = light->createComponent<LightComponent>();
+		lcomp->type(LightType::Spot);
+		lcomp->radius(40.0f);
+		lcomp->cutOff(consts::QuarPi * 0.25f);
+		lcomp->castsShadow(true);
+		light->rotation(Quaternion::lookAt(light->position(), Vector3(0.0f, 1.0f, 0.0f), Vector3(0.0f, 1.0f, 0.0f)));
+
 	}
 
 	virtual void onUpdate(Application& app, float dt) override {
@@ -68,18 +65,6 @@ public:
 
 		camera->position(Vector3(std::sin(angle * 0.5f) * 6.0f, 3.0f, 6.0f));
 		camera->rotation(Quaternion::lookAt(camera->position(), Vector3(0.0f), Vector3(0.0f, 1.0f, 0.0f)));
-
-		for (uint32 i = 0; i < LIGHTS; i++) {
-			uint32 k = i + 1;
-			auto comp = lights[i]->getComponent<LightComponent>();
-			float blink = std::sin(angle * k) * 0.5f + 0.5f;
-			comp->intensity(blink);
-			lights[i]->position(Vector3(
-				std::sin(k * angle * 0.1f) * 6.0f,
-				0.5f,
-				std::cos(k * angle * 0.1f) * 6.0f
-			));
-		}
 
 		angle += dt;
 	}
@@ -96,7 +81,6 @@ public:
 	Texture *brickDiff, *brickSpec, *brickNorm;
 
 	Entity *bunny, *camera, *floor;
-	Entity* lights[LIGHTS];
 
 	std::unique_ptr<EntityWorld> world;
 	std::unique_ptr<Renderer> renderer;

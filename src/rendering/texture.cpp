@@ -20,7 +20,7 @@ namespace ae {
 				case TextureFormat::RGf: ifmt = GL_RG32F; fmt = GL_RG; type = GL_FLOAT; comps = 2; break;
 				case TextureFormat::RGBf: ifmt = GL_RGB32F; fmt = GL_RGB; type = GL_FLOAT; comps = 3; break;
 				case TextureFormat::RGBAf: ifmt = GL_RGBA32F; fmt = GL_RGBA; type = GL_FLOAT; comps = 4; break;
-				case TextureFormat::Depthf: ifmt = GL_DEPTH_COMPONENT24; fmt = GL_DEPTH_COMPONENT; type = GL_FLOAT; comps = 1; break;
+				case TextureFormat::Depthf: ifmt = GL_DEPTH_COMPONENT32F; fmt = GL_DEPTH_COMPONENT; type = GL_FLOAT; comps = 1; break;
 				case TextureFormat::DepthStencil: ifmt = GL_DEPTH24_STENCIL8; fmt = GL_DEPTH_STENCIL; type = GL_FLOAT; comps = 2; break;
 			}
 			return std::make_tuple(ifmt, fmt, type, comps);

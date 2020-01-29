@@ -30,10 +30,10 @@ namespace ae {
 	class FrameBuffer {
 	public:
 		FrameBuffer() = default;
-		~FrameBuffer() = default;
+		inline virtual ~FrameBuffer() { free(); }
 
 		void create(uint32 width, uint32 height, uint32 depth = 1);
-		void destroy();
+		void free();
 
 		void color(
 			TextureTarget type, TextureFormat format,
@@ -41,7 +41,7 @@ namespace ae {
 			uint32 layer = 0
 		);
 
-		void depth(uint32 depthSize = 24);
+		void depth();
 		void stencil();
 
 		void renderBuffer(
@@ -65,11 +65,17 @@ namespace ae {
 			TextureFilter filter
 		);
 
+		void clear(ClearBufferMask mask, float r = 0.0f, float g = 0.0f, float b = 0.0f, float a = 1.0f);
+
 		uint32 id() const { return m_id; }
 
 		uint32 width() const { return m_width; }
 		uint32 height() const { return m_height; }
 		uint32 depth() const { return m_depth; }
+
+		const std::vector<std::unique_ptr<Texture>>& colorAttachments() { return m_colorAttachments; }
+		const std::unique_ptr<Texture>& depthAttachment() { return m_depthAttachment; }
+		const std::unique_ptr<Texture>& stencilAttachment() { return m_stencilAttachment; }
 
 	private:
 		struct SavedColorAttachment {
