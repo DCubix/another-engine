@@ -32,8 +32,8 @@ public:
 		floorModel = ResourceManager::ston().load<Mesh>("floor", "cube.obj");
 
 		camera->createComponent<CameraComponent>();
-		auto&& bcomp = bunny->createComponent<MeshComponent>(bunnyModel);
-		auto&& mcomp = floor->createComponent<MeshComponent>(floorModel);
+		auto bcomp = bunny->createComponent<MeshComponent>(bunnyModel);
+		auto mcomp = floor->createComponent<MeshComponent>(floorModel);
 
 		floor->scale(Vector3(10.0f, 0.02f, 10.0f));
 		floor->position(Vector3(0.0f, -1.0f, 0.0f));
@@ -51,7 +51,7 @@ public:
 
 		for (uint32 i = 0; i < LIGHTS; i++) {
 			lights[i] = world->create();
-			auto&& light = lights[i]->createComponent<LightComponent>();
+			auto light = lights[i]->createComponent<LightComponent>();
 			light->type(LightType::Point);
 			light->radius(mathutils::random(10.0f, 30.0f));
 			light->color(Vector3(
@@ -71,7 +71,7 @@ public:
 
 		for (uint32 i = 0; i < LIGHTS; i++) {
 			uint32 k = i + 1;
-			auto&& comp = lights[i]->getComponent<LightComponent>();
+			auto comp = lights[i]->getComponent<LightComponent>();
 			float blink = std::sin(angle * k) * 0.5f + 0.5f;
 			comp->intensity(blink);
 			lights[i]->position(Vector3(
