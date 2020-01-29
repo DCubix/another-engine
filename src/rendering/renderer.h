@@ -4,6 +4,7 @@
 #include "vec_math.hpp"
 #include "mesh.h"
 #include "shader.h"
+#include "texture.h"
 #include "game_logic.h"
 
 namespace ae {
@@ -39,11 +40,19 @@ namespace ae {
 		Vector3 m_color{ Vector3(1.0f) };
 		float m_radius{ 16.0f }, m_cutoff{ 0.5f }, m_intensity{ 1.0f };
 	};
-
+	
 	struct Material {
+		enum SlotType {
+			SlotDiffuse = 0,
+			SlotNormal,
+			SlotSpecular,
+			SlotCount
+		};
+
 		Vector3 baseColor{ Vector3(1.0f) };
 		float shininess{ 0.15f };
 		float specular{ 1.0f };
+		Texture* textures[SlotCount];
 	};
 
 	class MeshComponent : public Component {

@@ -73,6 +73,15 @@ namespace ae {
 
 			uniform Material uMaterial;
 
+			uniform sampler2D uDiffuse;
+			uniform bool uDiffuseOn = false;
+
+			uniform sampler2D uNormal;
+			uniform bool uNormalOn = false;
+
+			uniform sampler2D uSpecular;
+			uniform bool uSpecularOn = false;
+
 			float rim(vec3 D, vec3 N) {
 				float cs = abs(dot(D, N));
 				return smoothstep(0.3, 1.0, 1.0 - cs);
@@ -85,6 +94,10 @@ namespace ae {
 			void main() {
 				vec3 V = normalize(uEyePos - VS.position);
 				vec3 N = normalize(VS.normal);
+
+				if (uNormalOn) {
+					N = VS.tbn * (texture(uNormal, VS.texCoord).xyz * 2.0 - 1.0);
+				}
 
 				vec3 lighting = uAmbient;
 				for (int i = 0; i < uLightCount; i++) {
@@ -129,8 +142,17 @@ namespace ae {
 
 						vec3 R = reflect(-L, N);
 
+						float shin = uMaterial.shininess;
+						if (uSpecularOn) {
+							shin *= texture(uSpecular, VS.texCoord).r;
+						}
+
 						float spec = max(0.0, dot(R, V));
-						spec = att * pow(spec, uMaterial.shininess * 255.0) * uMaterial.specular * light.intensity;
+						spec = att * pow(spec, shin * 255.0) * uMaterial.specular * light.intensity;
+
+						if (uSpecularOn) {
+							spec *= texture(uSpecular, VS.texCoord).g;
+						}
 
 						lighting += (light.color * fact);
 						if (spec > 0.0) lighting += (light.color * spec);
@@ -138,6 +160,9 @@ namespace ae {
 				}
 
 				fragColor = vec4(uMaterial.base * lighting, 1.0);
+				if (uDiffuseOn) {
+					fragColor *= texture(uDiffuse, VS.texCoord);
+				}
 			}
 		)";
 
@@ -181,14 +206,47 @@ namespace ae {
 		m_uber->get("uLightCount").set(i);
 
 		world->each([&](Entity* ent, MeshComponent* mesh) {
+			m_uber->get("uDiffuseOn").set(0);
+			m_uber->get("uNormalOn").set(0);
+			m_uber->get("uSpecularOn").set(0);
+
 			m_uber->get("uModel").set(ent->transform());
 			m_uber->get("uMaterial.base").set(mesh->material().baseColor);
 			m_uber->get("uMaterial.shininess").set(mesh->material().shininess);
 			m_uber->get("uMaterial.specular").set(mesh->material().specular);
 
+			uint32 slot = 0;
+			for (uint32 k = 0; k < Material::SlotCount; k++) {
+				Texture* tex = mesh->material().textures[k];
+				if (tex == nullptr) continue;
+
+				tex->bind(slot);
+				switch (k) {
+					case Material::SlotDiffuse:
+						m_uber->get("uDiffuse").set(int(slot));
+						m_uber->get("uDiffuseOn").set(1);
+						break;
+					case Material::SlotNormal:
+						m_uber->get("uNormal").set(int(slot));
+						m_uber->get("uNormalOn").set(1);
+						break;
+					case Material::SlotSpecular:
+						m_uber->get("uSpecular").set(int(slot));
+						m_uber->get("uSpecularOn").set(1);
+						break;
+				}
+				slot++;
+			}
+
 			Mesh* m = mesh->mesh();
 			m->bind();
 			m->draw(Mesh::Triangles);
+
+			for (uint32 k = 0; k < Material::SlotCount; k++) {
+				Texture* tex = mesh->material().textures[k];
+				if (tex == nullptr) continue;
+				tex->unbind();
+			}
 		});
 	}
 

@@ -87,6 +87,7 @@ namespace ae {
 			std::vector<Vector3> vertices, normals;
 			std::vector<Vector2> texCoords;
 			bool reverseVertexOrder = false, calcNormals = false, calcTangs = false, fnormalize = false, fcentralize = false;
+			Vector4 uvTransform{ 0.0f, 0.0f, 1.0f, 1.0f };
 
 			std::string line;
 			while (std::getline(ss, line)) {
@@ -155,6 +156,17 @@ namespace ae {
 					fnormalize = true;
 				} else if (tok == "centralize") {
 					fcentralize = true;
+				} else if (tok == "uv_transform") {
+					std::string comp;
+					ls >> comp;
+					float x = std::stof(comp);
+					ls >> comp;
+					float y = std::stof(comp);
+					ls >> comp;
+					float z = std::stof(comp);
+					ls >> comp;
+					float w = std::stof(comp);
+					uvTransform = Vector4(x, y, z, w);
 				}
 			}
 
@@ -178,6 +190,10 @@ namespace ae {
 			if (fnormalize) normalize();
 			if (calcNormals) calculateNormals(Mesh::Triangles);
 			if (calcTangs) calculateTangents(Mesh::Triangles);
+			transformTexCoord(
+				Matrix4::translation(Vector3(uvTransform.x, uvTransform.y, 0.0f)) *
+				Matrix4::scale(Vector3(uvTransform.z, uvTransform.w, 0.0f))
+			);
 			build();
 		}
 		file.close();
@@ -278,7 +294,7 @@ namespace ae {
 		const Vector3 dt1 = t1 - t0;
 		const Vector3 dt2 = t2 - t0;
 
-		float dividend = dt1.x * dt2.y - dt1.y * dt2.x;
+		float dividend = dt1.x * dt2.y - dt2.x * dt1.y;
 		float f = dividend == 0.0f ? 0.0f : 1.0f / dividend;
 
 		Vector3 t = Vector3();

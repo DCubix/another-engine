@@ -29,12 +29,22 @@ public:
 		bunnyModel = ResourceManager::ston().load<Mesh>("model", "bunny.obj");
 		floorModel = ResourceManager::ston().load<Mesh>("floor", "cube.obj");
 
+		brickDiff = ResourceManager::ston().load<Texture>("diff", "diff.png");
+		brickNorm = ResourceManager::ston().load<Texture>("norm", "norm.png");
+		brickSpec = ResourceManager::ston().load<Texture>("spec", "spec.png");
+
 		camera->createComponent<CameraComponent>();
 		bunny->createComponent<MeshComponent>(bunnyModel);
-		floor->createComponent<MeshComponent>(floorModel);
+		auto&& mcomp = floor->createComponent<MeshComponent>(floorModel);
 
 		floor->scale(Vector3(10.0f, 0.02f, 10.0f));
 		floor->position(Vector3(0.0f, -1.0f, 0.0f));
+
+		mcomp->material().textures[Material::SlotDiffuse] = brickDiff;
+		mcomp->material().textures[Material::SlotNormal] = brickNorm;
+		mcomp->material().textures[Material::SlotSpecular] = brickSpec;
+		mcomp->material().shininess = 0.8f;
+		mcomp->material().specular = 2.0f;
 
 		for (uint32 i = 0; i < LIGHTS; i++) {
 			lights[i] = world->create();
@@ -78,6 +88,7 @@ public:
 	};
 
 	Mesh *bunnyModel, *floorModel;
+	Texture *brickDiff, *brickSpec, *brickNorm;
 
 	Entity *bunny, *camera, *floor;
 	Entity* lights[LIGHTS];
