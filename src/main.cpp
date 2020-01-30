@@ -75,6 +75,10 @@ public:
 		camera->position(Vector3(std::sin(angle * 0.5f) * 6.0f, 3.0f, 6.0f));
 		camera->rotation(Quaternion::lookAt(camera->position(), Vector3(0.0f), Vector3(0.0f, 1.0f, 0.0f)));
 
+		if (app.input().keyboard().held(KeyCode::Space)) {
+			bunny->rotation(bunny->rotation() * Quaternion::axisAngle(Vector3(0.0f, 1.0f, 0.0f), dt * 2.0f));
+		}
+
 		angle += dt;
 	}
 

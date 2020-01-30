@@ -4,6 +4,7 @@
 #include "sdl.hpp"
 #include "integer.hpp"
 #include "glad.h"
+#include "input.h"
 
 #include <memory>
 #include <string>
@@ -50,16 +51,20 @@ namespace ae {
 		void swapBuffers() const;
 		void clear(GLenum bits = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, float r = 0.0f, float g = 0.15f, float b = 0.25f, float a = 1.0f);
 
-		void exit() { m_shouldClose = true; }
+		void exit() { m_input.m_shouldQuit = true; }
 		void restart() { exit(); m_shouldRestart = true; }
 
 		double millisPerFrame() const { return m_msFrame; }
+
+		InputManager& input() { return m_input; }
 
 	private:
 		std::unique_ptr<ApplicationAdapter> m_application;
 		ApplicationSettings m_settings{};
 
-		bool m_running{ false }, m_shouldClose{ false }, m_shouldRestart{ false };
+		InputManager m_input{};
+
+		bool m_running{ false }, m_shouldRestart{ false };
 
 		uint32 m_frames{ 0 };
 		double m_msFrame{ 0.0 };

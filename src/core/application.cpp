@@ -148,13 +148,7 @@ namespace ae {
 			startTime = current;
 			accum += delta;
 
-			// TODO: Move this into an input manager
-			while (SDL_PollEvent(&event)) {
-				switch (event.type) {
-					case SDL_QUIT: m_shouldClose = true; break;
-				}
-			}
-			//
+			m_input.processEvents();
 
 			while (accum >= timeStep) {
 				accum -= timeStep;
@@ -172,7 +166,7 @@ namespace ae {
 				m_application->onRender(*this);
 			}
 
-			if (m_shouldClose) m_running = false;
+			if (m_input.shouldQuit()) m_running = false;
 		}
 		m_application->onDestroy();
 
@@ -183,7 +177,7 @@ namespace ae {
 		if (m_shouldRestart) {
 			run();
 			m_shouldRestart = false;
-			m_shouldClose = false;
+			m_input.m_shouldQuit = false;
 		}
 	}
 }

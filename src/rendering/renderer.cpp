@@ -368,7 +368,7 @@ namespace ae {
 			m_uber->get("uLights[" + istr + "].cutoff").set(light->cutOff());
 			m_uber->get("uLights[" + istr + "].viewProj").set(light->projection() * light->viewTransform());
 
-			if ((light->type() == LightType::Directional || light->type() == LightType::Spot) && light->castsShadow()) {
+			if ((light->type() == LightType::Directional || light->type() == LightType::Spot) && light->castsShadow() && shadowIndex < 8) {
 				renderShadows(world, light);
 				m_uber->bind();
 				light->shadowBuffer()->depthAttachment()->bind(shadowIndex);
