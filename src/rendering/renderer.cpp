@@ -130,6 +130,7 @@ namespace ae {
 				vec3 base;
 				float shininess;
 				float specular;
+				bool receivesShadow;
 			};
 
 			in Data {
@@ -159,9 +160,55 @@ namespace ae {
 			uniform sampler2D uSpecular;
 			uniform bool uSpecularOn = false;
 
+			uniform sampler2D uReflection;
+			uniform bool uReflectionOn = false;
+
+			uniform sampler2D uHeight;
+			uniform float uHeightScale = 1.0;
+			uniform bool uHeightOn = false;
+
 			float rim(vec3 D, vec3 N) {
 				float cs = abs(dot(D, N));
 				return smoothstep(0.3, 1.0, 1.0 - cs);
+			}
+
+			vec2 matcap(vec3 eye, vec3 normal) {
+				vec3 reflected = reflect(eye, normal);
+				float m = 2.8284271247461903 * sqrt( reflected.z+1.0 );
+				vec2 ret = reflected.xy / m + 0.5;
+				ret.y = 1.0 - ret.y;
+				return ret;
+			}
+
+			vec2 parallax(sampler2D depthMap, vec2 uv, vec3 V, float height) {
+				const float minLayers = 8.0;
+				const float maxLayers = 32.0;
+				float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), V)));
+				float layerDepth = 1.0 / numLayers;
+
+				float currentLayerDepth = 0.0;
+				
+				vec2 P = V.xy * height;
+				vec2 deltaTexCoords = P / numLayers;
+
+				vec2  currentTexCoords     = uv;
+				float currentDepthMapValue = 1.0 - texture(depthMap, currentTexCoords).r;
+
+				while (currentLayerDepth < currentDepthMapValue) {
+					currentTexCoords -= deltaTexCoords;
+					currentDepthMapValue = 1.0 - texture(depthMap, currentTexCoords).r;
+					currentLayerDepth += layerDepth;
+				}
+
+				vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+
+				float afterDepth  = currentDepthMapValue - currentLayerDepth;
+				float beforeDepth = (1.0 - texture(depthMap, prevTexCoords).r) - currentLayerDepth + layerDepth;
+
+				float weight = afterDepth / (afterDepth - beforeDepth);
+				vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+
+				return finalTexCoords;
 			}
 
 			float sqr2(float x) {
@@ -221,9 +268,20 @@ namespace ae {
 			void main() {
 				vec3 V = normalize(uEyePos - VS.position);
 				vec3 N = normalize(VS.normal);
+				vec2 uv = VS.texCoord;
+
+				float h = abs(uHeightScale);
+				if (uHeightOn && h > 0.0) {
+					vec3 tanViewPos = VS.tbn * uEyePos;
+					vec3 tanFragPos = VS.tbn * VS.position;
+					vec3 viewDir = normalize(tanViewPos - tanFragPos);
+					uv = parallax(uHeight, uv, viewDir, h);
+				}
 
 				if (uNormalOn) {
-					N = VS.tbn * (texture(uNormal, VS.texCoord).xyz * 2.0 - 1.0);
+					vec3 norm = texture(uNormal, uv).xyz;
+					norm.y = 1.0 - norm.y;
+					N = normalize(VS.tbn * (norm * 2.0 - 1.0));
 				}
 
 				vec3 lighting = uAmbient;
@@ -264,9 +322,13 @@ namespace ae {
 
 					float NoL = max(dot(N, L), 0.0);
 					float vis = 1.0;
-					if (light.hasShadow) {
+					if (light.hasShadow && uMaterial.receivesShadow) {
 						vec4 sc = mBias * light.viewProj * vec4(VS.position, 1.0);
 						vec3 coord = sc.xyz / sc.w;
+						if (uHeightOn && h > 0.0) {
+							coord += VS.normal * texture(uHeight, uv).r * h;
+						}
+
 						float bias = clamp(tan(acos(NoL)) * 0.000001, 0.0, 0.000001);
 						if (light.type == 0) vis = PCSS(uShadows[i], coord, bias, light.radius * 0.004);
 						else if (light.type == 2) vis = 1.0 - PCF(uShadows[i], coord, bias, light.radius * 0.00035);
@@ -280,14 +342,14 @@ namespace ae {
 
 						float shin = uMaterial.shininess;
 						if (uSpecularOn) {
-							shin *= texture(uSpecular, VS.texCoord).r;
+							shin *= texture(uSpecular, uv).r;
 						}
 
 						float spec = max(0.0, dot(R, V));
 						spec = att * pow(spec, shin * 255.0) * uMaterial.specular;
 
 						if (uSpecularOn) {
-							spec *= texture(uSpecular, VS.texCoord).g;
+							spec *= texture(uSpecular, uv).g;
 						}
 
 						vec3 col = (light.color * fact);
@@ -299,7 +361,10 @@ namespace ae {
 
 				fragColor = vec4(uMaterial.base * lighting, 1.0);
 				if (uDiffuseOn) {
-					fragColor *= texture(uDiffuse, VS.texCoord);
+					fragColor *= texture(uDiffuse, uv);
+				}
+				if (uReflectionOn) {
+					fragColor *= texture(uReflection, matcap(V, N));
 				}
 				fragColor.rgb = pow(fragColor.rgb, vec3(1.0 / 2.2));
 			}
@@ -368,7 +433,7 @@ namespace ae {
 			m_uber->get("uLights[" + istr + "].cutoff").set(light->cutOff());
 			m_uber->get("uLights[" + istr + "].viewProj").set(light->projection() * light->viewTransform());
 
-			if ((light->type() == LightType::Directional || light->type() == LightType::Spot) && light->castsShadow() && shadowIndex < 8) {
+			if ((light->type() == LightType::Directional || light->type() == LightType::Spot) && light->shadowsEnabled() && shadowIndex < 8) {
 				renderShadows(world, light);
 				m_uber->bind();
 				light->shadowBuffer()->depthAttachment()->bind(shadowIndex);
@@ -388,15 +453,18 @@ namespace ae {
 			m_uber->get("uDiffuseOn").set(0);
 			m_uber->get("uNormalOn").set(0);
 			m_uber->get("uSpecularOn").set(0);
+			m_uber->get("uReflectionOn").set(0);
+			m_uber->get("uHeightOn").set(0);
 
 			m_uber->get("uModel").set(ent->transform());
-			m_uber->get("uMaterial.base").set(mesh->material().baseColor);
-			m_uber->get("uMaterial.shininess").set(mesh->material().shininess);
-			m_uber->get("uMaterial.specular").set(mesh->material().specular);
+			m_uber->get("uMaterial.base").set(mesh->material().base());
+			m_uber->get("uMaterial.shininess").set(mesh->material().shininess());
+			m_uber->get("uMaterial.specular").set(mesh->material().specular());
+			m_uber->get("uMaterial.receivesShadow").set(mesh->material().receivesShadow());
 
 			uint32 slot = shadowIndex;
 			for (uint32 k = 0; k < Material::SlotCount; k++) {
-				Texture* tex = mesh->material().textures[k];
+				Texture* tex = mesh->material().m_textures[k];
 				if (tex == nullptr) continue;
 
 				tex->bind(slot);
@@ -413,6 +481,15 @@ namespace ae {
 						m_uber->get("uSpecular").set(int(slot));
 						m_uber->get("uSpecularOn").set(1);
 						break;
+					case Material::SlotReflection:
+						m_uber->get("uReflection").set(int(slot));
+						m_uber->get("uReflectionOn").set(1);
+						break;
+					case Material::SlotHeight:
+						m_uber->get("uHeight").set(int(slot));
+						m_uber->get("uHeightScale").set(mesh->material().height());
+						m_uber->get("uHeightOn").set(1);
+						break;
 				}
 				slot++;
 			}
@@ -422,7 +499,7 @@ namespace ae {
 			m->draw(Mesh::Triangles);
 
 			for (uint32 k = 0; k < Material::SlotCount; k++) {
-				Texture* tex = mesh->material().textures[k];
+				Texture* tex = mesh->material().m_textures[k];
 				if (tex == nullptr) continue;
 				tex->unbind();
 			}
@@ -445,7 +522,7 @@ namespace ae {
 		m_shadows->get("uView").set(comp->viewTransform());
 
 		world->each([&](Entity* ent, MeshComponent* mesh) {
-			if (mesh->material().castsShadow) {
+			if (mesh->material().castsShadow()) {
 				m_shadows->get("uModel").set(ent->transform());
 				Mesh* m = mesh->mesh();
 

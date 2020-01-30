@@ -39,8 +39,8 @@ namespace ae {
 		float cutOff() const { return m_cutoff; }
 		void cutOff(float cutOff) { m_cutoff = cutOff; }
 
-		bool castsShadow() const { return m_castsShadow; }
-		void castsShadow(bool v) { m_castsShadow = v; }
+		bool shadowsEnabled() const { return m_shadowsEnabled; }
+		void shadowsEnabled(bool v) { m_shadowsEnabled = v; }
 
 		FrameBuffer* shadowBuffer() { return m_shadowBuffer.get(); }
 
@@ -59,7 +59,7 @@ namespace ae {
 		LightType m_type{ LightType::Directional };
 		Vector3 m_color{ Vector3(1.0f) };
 		float m_radius{ 16.0f }, m_cutoff{ 0.5f }, m_intensity{ 1.0f };
-		bool m_castsShadow{ true };
+		bool m_shadowsEnabled{ true };
 
 		std::unique_ptr<FrameBuffer> m_shadowBuffer;
 
@@ -70,20 +70,44 @@ namespace ae {
 		}
 	};
 
-	struct Material {
+	class Material {
+		friend class Renderer;
+	public:
 		enum SlotType {
 			SlotDiffuse = 0,
 			SlotNormal,
 			SlotSpecular,
+			SlotReflection,
+			SlotHeight,
 			SlotCount
 		};
 
-		Vector3 baseColor{ Vector3(1.0f) };
-		float shininess{ 0.15f };
-		float specular{ 1.0f };
-		Texture* textures[SlotCount];
-		bool castsShadow{ true };
-		bool receivesShadow{ true };
+		inline void texture(SlotType slot, Texture* texture) { m_textures[slot] = texture; }
+		inline Texture* texture(SlotType slot) {return m_textures[slot]; }
+
+		const Vector3& base() const { return m_base; }
+		void base(const Vector3& base) { m_base = base; }
+
+		float shininess() const { return m_shininess; }
+		void shininess(float shininess) { m_shininess = shininess; }
+
+		float specular() const { return m_specular; }
+		void specular(float specular) { m_specular = specular; }
+
+		bool castsShadow() const { return m_castsShadow; }
+		void castsShadow(bool castsShadow) { m_castsShadow = castsShadow; }
+
+		bool receivesShadow() const { return m_receivesShadow; }
+		void receivesShadow(bool receivesShadow) { m_receivesShadow = receivesShadow; }
+
+		float height() const { return m_height; }
+		void height(float height) { m_height = height; }
+
+	protected:
+		Vector3 m_base{ Vector3(1.0f) };
+		float m_shininess{ 0.15f }, m_specular{ 1.0f }, m_height{ 0.05f };
+		Texture* m_textures[SlotCount]{ nullptr };
+		bool m_castsShadow{ true }, m_receivesShadow{ true };
 	};
 
 	class MeshComponent : public Component {
