@@ -59,18 +59,6 @@ namespace ae {
 		if (m_settings.window.fullScreen) flags |= SDL_WINDOW_FULLSCREEN;
 		else if (m_settings.window.resizable) flags |= SDL_WINDOW_RESIZABLE;
 
-		m_window = SDL_CreateWindow(
-			m_settings.window.title.c_str(),
-			SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-			m_settings.window.width, m_settings.window.height,
-			flags
-		);
-		if (m_window == nullptr) {
-			SDL_Quit();
-			Log.error("SDL Error: " + std::string(SDL_GetError()));
-			return;
-		}
-
 		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
@@ -83,6 +71,18 @@ namespace ae {
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
 
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+		m_window = SDL_CreateWindow(
+			m_settings.window.title.c_str(),
+			SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+			m_settings.window.width, m_settings.window.height,
+			flags
+		);
+		if (m_window == nullptr) {
+			SDL_Quit();
+			Log.error("SDL Error: " + std::string(SDL_GetError()));
+			return;
+		}
 
 #ifndef NDEBUG
 		int32 contextFlags = 0;

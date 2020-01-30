@@ -41,7 +41,7 @@ public:
 		mcomp->material().textures[Material::SlotNormal] = ResourceManager::ston().load<Texture>("norm", "norm.png");
 		mcomp->material().textures[Material::SlotSpecular] = ResourceManager::ston().load<Texture>("spec", "spec.png");
 		mcomp->material().shininess = 0.8f;
-		mcomp->material().specular = 2.0f;
+		mcomp->material().specular = 1.0f;
 
 		bcomp->material().textures[Material::SlotDiffuse] = ResourceManager::ston().load<Texture>("bunny_diff", "bunny_diff.png");
 		bcomp->material().textures[Material::SlotNormal] = ResourceManager::ston().load<Texture>("bunny_norm", "bunny_norm.png");
@@ -54,7 +54,7 @@ public:
 		lcomp->type(LightType::Spot);
 		lcomp->radius(40.0f);
 		lcomp->cutOff(consts::QuarPi * 0.25f);
-		lcomp->castsShadow(true);
+		lcomp->color(Vector3(1.0f, 0.15f, 0.0f));
 		light->rotation(Quaternion::lookAt(light->position(), Vector3(0.0f, 1.0f, 0.0f), Vector3(0.0f, 1.0f, 0.0f)));
 
 		light = world->create();
@@ -63,7 +63,7 @@ public:
 		lcomp2->type(LightType::Spot);
 		lcomp2->radius(40.0f);
 		lcomp2->cutOff(consts::QuarPi * 0.25f);
-		lcomp2->castsShadow(true);
+		lcomp->color(Vector3(0.0f, 0.25f, 1.0f));
 		light->rotation(Quaternion::lookAt(light->position(), Vector3(0.0f, 1.0f, 0.0f), Vector3(0.0f, 1.0f, 0.0f)));
 
 	}
